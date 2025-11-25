@@ -1004,5 +1004,4 @@ void viewFavoritesMenu(KomikManager &manager, BST &tree)
  * - Lambda expression
  * - Template (function<>)
  *
- * SEMOGA MEMBANTU BELAJAR! 🚀
  */

@@ -1,12 +1,3 @@
-/*
- * BST.h
- * File HEADER untuk Binary Search Tree
- *
- * Analogi: Ini adalah "daftar isi" dari BST
- * Di file .h kita tulis DEKLARASI (rencana) fungsi-fungsinya
- * Di file .cpp nanti kita tulis IMPLEMENTASI (isi detail) fungsinya
- */
-
 #ifndef BST_H
 #define BST_H
 
@@ -14,7 +5,7 @@
 #include <functional> // Include functional untuk pakai std::function
 #include <vector>     // Include vector untuk menyimpan banyak data
 
-using namespace std; // Biar tidak perlu tulis std:: terus-menerus
+using namespace std;
 
 // CLASS BST = blueprint untuk bikin pohon BST
 class BST
