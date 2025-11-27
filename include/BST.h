@@ -1,25 +1,16 @@
 #ifndef BST_H
 #define BST_H
 
-#include "Komik.h"    // Include Komik.h karena kita butuh struct Komik
-#include <functional> // Include functional untuk pakai std::function
-#include <vector>     // Include vector untuk menyimpan banyak data
+#include "Komik.h"
+#include <functional>
+#include <vector>
 
 using namespace std;
 
-// CLASS BST = blueprint untuk bikin pohon BST
 class BST
 {
 private:
-    // ===== PRIVATE = hanya bisa diakses dari dalam class BST =====
-
-    Komik *root; // root = node paling atas di tree
-                 // Semua tree dimulai dari root
-                 // Pointer karena bisa kosong (nullptr) atau menunjuk ke node
-
-    // ===== HELPER FUNCTIONS (fungsi pembantu) =====
-    // Fungsi-fungsi ini PRIVATE karena hanya dipakai internal
-    // User tidak perlu tahu detail implementasinya
+    Komik *root;
 
     // insertHelper: fungsi rekursif untuk insert node
     // Parameter: node = node saat ini, newKomik = komik baru yang mau dimasukkan

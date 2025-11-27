@@ -1,6 +1,7 @@
 #ifndef KOMIK_MANAGER_H
 #define KOMIK_MANAGER_H
 
+#include <BST.h>
 #include <string>
 #include <vector>
 #include <map>
