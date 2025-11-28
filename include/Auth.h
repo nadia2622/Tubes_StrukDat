@@ -73,6 +73,9 @@ private:
     // Check if username already exists
     bool usernameExists(const string &username);
 
+    // Function untuk input password dengan masking (tampilkan *)
+    string getPasswordInput(const string &prompt);
+
 public:
     // ===== CONSTRUCTOR & DESTRUCTOR =====
     Auth();
@@ -94,6 +97,12 @@ public:
     //   - password: password
     // Return: true jika berhasil, false jika gagal (username/password salah)
     bool login(const string &username, const string &password);
+
+    // Login dengan input password yang di-mask (tampil ***)
+    bool loginWithMaskedPassword(const string &username);
+
+    // Register dengan input password yang di-mask
+    bool registerWithMaskedPassword(const string &username, const string &role = "user");
 
     // logout: Logout user saat ini
     void logout();

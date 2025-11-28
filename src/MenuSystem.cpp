@@ -111,14 +111,16 @@ void MenuSystem::showMainMenu() {
 bool MenuSystem::handleLogin() {
     printHeader("LOGIN");
     
-    string username, password;
+    string username;
     
     cout << "Username: ";
     cin >> username;
-    cout << "Password: ";
-    cin >> password;
+    // cout << "Password: ";
+    // cin >> password;
+    cin.ignore();
     
-    bool success = auth.login(username, password);
+    // bool success = auth.login(username, password);
+    bool success = auth.loginWithMaskedPassword(username);
     
     if (success) {
         pause();
@@ -133,22 +135,13 @@ bool MenuSystem::handleLogin() {
 bool MenuSystem::handleRegister() {
     printHeader("REGISTER NEW ACCOUNT");
     
-    string username, password, confirmPassword;
+    string username;
     
     cout << "Enter username (min 3 characters): ";
     cin >> username;
-    cout << "Enter password (min 6 characters): ";
-    cin >> password;
-    cout << "Confirm password: ";
-    cin >> confirmPassword;
+    cin.ignore(); // Clear newline buffer
     
-    if (password != confirmPassword) {
-        cerr << "\033[31mPasswords do not match!\033[0m" << endl;
-        pause();
-        return false;
-    }
-    
-    bool success = auth.registerUser(username, password, "user");
+    bool success = auth.registerWithMaskedPassword(username, "user");
     
     if (success) {
         cout << "\n\033[32mRegistration successful!\033[0m" << endl;
