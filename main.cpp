@@ -333,8 +333,39 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
             }
 
             // ===== INPUT GENRE =====
-            cout << "\nEnter genre: ";
-            getline(cin, genre);
+            int genreChoice;
+            bool validChoice = false;
+
+            do
+            {
+                cout << "\nPilih genre (1-" << genres.size() << "): ";
+                cin >> genreChoice;
+
+                if (cin.fail())
+                {
+                    // Input bukan angka
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                    cout << "\033[31mInput tidak valid! Masukkan berupa angka.\033[0m" << endl;
+                    continue;
+                }
+
+                if (genreChoice < 1 || genreChoice > (int)(genres.size()))
+                {
+                    // Input di luar range
+                    cout << "\033[31mPilihan tidak valid! Silakan pilih antara 1-"
+                         << genres.size() << "\033[0m" << endl;
+                }
+                else
+                {
+                    validChoice = true; // Valid!
+                    // Ambil nama genre sesuai pilihan
+                    // genreChoice - 1 karena vector index dimulai dari 0
+                    genre = genres[genreChoice - 1];
+                }
+            } while (!validChoice);
+
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
             // ===== INSERT KE TREE =====
             // Get ID baru dari manager
@@ -347,8 +378,11 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
             tree.insert(newKomik);
 
             // Print success message
-            cout << "\033[32mKomik added successfully with ID: "
-                 << newId << "\033[0m" << endl;
+            cout << "\n\033[32mBerhasil menambah komik baru!\033[0m" << endl;
+            cout << "ID: " << newId << endl;
+            cout << "Title: " << title << endl;
+            cout << "Author: " << author << endl;
+            cout << "Genre: " << genre << endl;
 
             pause();
             break;

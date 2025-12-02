@@ -1,7 +1,7 @@
 #ifndef KOMIK_MANAGER_H
 #define KOMIK_MANAGER_H
 
-#include <BST.h>
+#include "BST.h"
 #include <string>
 #include <vector>
 #include <map>
@@ -18,6 +18,8 @@ private:
 public:
     KomikManager();
     ~KomikManager();
+
+    void loadSampleData(BST& tree);
     
     int getNextId();
 
