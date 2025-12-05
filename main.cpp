@@ -14,6 +14,8 @@
 #include "include/KomikManager.h" // Include class KomikManager
 #include "src/BST.cpp"            // Include implementasi BST
 #include "src/KomikManager.cpp"   // Include implementasi KomikManager
+#include "include/SearchFilter.h" // Include class SearchFilter
+#include "src/SearchFilter.cpp"   // Include implementasi SearchFilter
 // CATATAN: Biasanya tidak include .cpp, tapi untuk simplicity di sini kita include
 
 #include <iostream> // Untuk pakai cout, cin
@@ -265,6 +267,7 @@ void mainMenu(BST &tree, KomikManager &manager)
 void crudKomikMenu(BST &tree, KomikManager &manager)
 {
     int choice;
+    SearchFilter filter;
 
     do
     {
@@ -276,9 +279,11 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
         // Print menu
         cout << "1. Add Komik\n";
         cout << "2. View All Komiks (In-Order)\n";
-        cout << "3. Search Komik\n";
-        cout << "4. Update Komik\n";
-        cout << "5. Delete Komik\n";
+        cout << "3. Search Komik by Title\n";
+        cout << "4. Filter Komik by Author\n";
+        cout << "5. Filter Komik by Genre\n";
+        cout << "6. Update Komik\n";
+        cout << "7. Delete Komik\n";
         cout << "0. Back\n";
         cout << "\nChoice: ";
 
@@ -403,37 +408,106 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
         // ===== CASE 3: SEARCH KOMIK =====
         case 3:
         {
-            printHeader("SEARCH COMIC");
+            printHeader("SEARCH COMIC BY TITLE");
 
-            string title;
-            cout << "Enter title to search: ";
-            getline(cin, title);
+            string keyword;
+            cout << "Enter title keyword: ";
+            getline(cin, keyword);
 
-            // Search komik by title
-            Komik *found = tree.search(title);
+            vector<Komik*> results = filter.searchByTitle(tree, keyword);
 
-            // Cek apakah ketemu
-            if (found != nullptr)
-            {
-                // Ketemu! Print info komik
-                cout << "\033[32m\nKomik found!\033[0m\n";
-                cout << "ID: " << found->id << endl;
-                cout << "Title: " << found->title << endl;
-                cout << "Author: " << found->author << endl;
-                cout << "Genre: " << found->genre << endl;
+            if (results.empty()) {
+                cout << "\033[31mNo comics found!\033[0m\n";
+            } else {
+                cout << "\n\033[32m" << results.size() << " comics found:\033[0m\n\n";
+
+                cout << left << setw(5) << "ID"
+                    << setw(30) << "Title"
+                    << setw(25) << "Author"
+                    << setw(15) << "Genre" << endl;
+                cout << string(75, '-') << endl;
+
+                for (Komik* k : results) {
+                    cout << left << setw(5) << k->id
+                        << setw(30) << k->title
+                        << setw(25) << k->author
+                        << setw(15) << k->genre << endl;
+                }
             }
-            else
-            {
-                // Tidak ketemu
-                cout << "\033[31mKomik not found!\033[0m" << endl;
+            pause();
+            break;
+        }
+
+        // ===== CASE 4: FILTER KOMIK BY AUTHOR =====
+        case 4:
+        {
+            printHeader("FILTER COMIC BY AUTHOR");
+
+            string keyword;
+            cout << "Enter author keyword: ";
+            getline(cin, keyword);
+
+            vector<Komik*> results = filter.searchByAuthor(tree, keyword);
+
+            if (results.empty()) {
+                cout << "\033[31mNo comics found!\033[0m\n";
+            } else {
+                cout << "\n\033[32m" << results.size() << " comics found:\033[0m\n\n";
+
+                cout << left << setw(5) << "ID"
+                    << setw(30) << "Title"
+                    << setw(25) << "Author"
+                    << setw(15) << "Genre" << endl;
+                cout << string(75, '-') << endl;
+
+                for (Komik* k : results) {
+                    cout << left << setw(5) << k->id
+                        << setw(30) << k->title
+                        << setw(25) << k->author
+                        << setw(15) << k->genre << endl;
+                }
+            }
+            pause();
+            break;
+        }
+
+        // ===== CASE 5: FILTER KOMIK BY GENRE =====
+        case 5:
+        {
+            printHeader("FILTER KOMIK BY GENRE");
+
+            cin.ignore();
+            string keyword;
+            cout << "Enter genre keyword: ";
+            getline(cin, keyword);
+
+            vector<Komik*> results = filter.searchByGenre(tree, keyword);
+
+            if (results.empty()) {
+                cout << "\033[31mNo comics found!\033[0m\n";
+            } else {
+                cout << "\n\033[32m" << results.size() << " comics found:\033[0m\n\n";
+
+                cout << left << setw(5) << "ID"
+                    << setw(30) << "Title"
+                    << setw(25) << "Author"
+                    << setw(15) << "Genre" << endl;
+                cout << string(75, '-') << endl;
+
+                for (Komik* k : results) {
+                    cout << left << setw(5) << k->id
+                        << setw(30) << k->title
+                        << setw(25) << k->author
+                        << setw(15) << k->genre << endl;
+                }
             }
 
             pause();
             break;
         }
 
-        // ===== CASE 4: UPDATE KOMIK =====
-        case 4:
+        // ===== CASE 6: UPDATE KOMIK =====
+        case 6:
         {
             printHeader("UPDATE COMIC");
 
@@ -481,8 +555,8 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
             break;
         }
 
-        // ===== CASE 5: DELETE KOMIK =====
-        case 5:
+        // ===== CASE 7: DELETE KOMIK =====
+        case 7:
         {
             printHeader("DELETE COMIC");
 

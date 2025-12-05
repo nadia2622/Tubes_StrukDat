@@ -25,10 +25,12 @@ KomikManagementSystem/
 │   ├── Komik.h           # Node structure
 │   ├── BST.h             # BST header
 │   └── KomikManager.h    # Manager (ganti Database)
+|   └── SearchFilter.h    # untuk fitur pencarian berdasarkan title, author, genre
 │
 ├── src/
 │   ├── BST.cpp           # BST implementation
 │   └── KomikManager.cpp  # Manager implementation
+│   └── SearchFilter.cpp  # SearchFilter implementation
 │
 ├── main.cpp              # Program utama
 └── README.md             # Dokumentasi ini
@@ -265,11 +267,12 @@ ID: 5 | Title: Berserk | Author: Kentaro Miura | Genre: Fantasy
 - ✅ Traversal (Pre/In/Post-order)
 - ✅ View Favorites
 
-### Nadia (Pending)
+### Nadia
 
-- Search by title (DFS)
-- Filter by Genre
-- Filter by Author
+- ✅ Search by title (DFS)
+- ✅ Filter by Genre
+- ✅ Filter by Author
+- Desain Tree
 
 ### Ryvanda (Pending)
 
