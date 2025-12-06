@@ -582,7 +582,10 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
             printHeader("FILTER BY AUTHOR");
             string key;
             cout << "Enter author name: ";
-            getline(cin, key);
+            getline(cin >> ws, key);  // ws biar newline sisa input sebelumnya ke-skip
+
+            SearchFilter filter;                          // bikin objek SearchFilter
+            vector<Komik*> results = filter.searchByAuthor(tree, key);  // pakai fungsi yang sudah ada
 
             cout << "\nResult:\n";
             cout << string(80, '-') << endl;
@@ -593,15 +596,13 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
             cout << string(80, '-') << endl;
 
             int count = 0;
-            tree.inOrder([&](Komik* comic){
-                if (SearchFilter::byAuthor(comic, key)) {
-                    cout << left << setw(5) << comic->id
-                        << setw(30) << comic->title
-                        << setw(25) << comic->author
-                        << setw(20) << comic->genre << endl;
-                    count++;
-                }
-            });
+            for (Komik* comic : results) {
+                cout << left << setw(5) << comic->id
+                    << setw(30) << comic->title
+                    << setw(25) << comic->author
+                    << setw(20) << comic->genre << endl;
+                count++;
+            }
 
             if (count == 0)
                 cout << "\033[31mNo match found.\033[0m\n";
@@ -619,6 +620,9 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
             string selectedGenre = getMultipleGenres(manager);
             if (selectedGenre.empty()) break;
 
+            SearchFilter filter;
+            vector<Komik*> results = filter.searchByGenre(tree, selectedGenre);
+
             cout << "\nResult:\n";
             cout << string(80, '-') << endl;
             cout << left << setw(5) << "ID"
@@ -628,15 +632,13 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
             cout << string(80, '-') << endl;
 
             int count = 0;
-            tree.inOrder([&](Komik* comic){
-                if (SearchFilter::byGenre(comic, selectedGenre)) {
-                    cout << left << setw(5) << comic->id
-                        << setw(30) << comic->title
-                        << setw(25) << comic->author
-                        << setw(20) << comic->genre << endl;
-                    count++;
-                }
-            });
+            for (Komik* comic : results) {
+                cout << left << setw(5) << comic->id
+                    << setw(30) << comic->title
+                    << setw(25) << comic->author
+                    << setw(20) << comic->genre << endl;
+                count++;
+            }
 
             if (count == 0)
                 cout << "\033[31mNo match found.\033[0m\n";
