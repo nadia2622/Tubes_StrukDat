@@ -1,13 +1,3 @@
-/*
- * main.cpp - PART 1
- * Program utama untuk testing sistem manajemen komik
- *
- * File ini berisi:
- * - Fungsi main()
- * - Fungsi-fungsi helper (clearScreen, pause, printHeader)
- * - Fungsi menu utama
- */
-
 // ===== INCLUDE HEADER FILES =====
 #include "include/Komik.h"        // Include struct Komik
 #include "include/BST.h"          // Include class BST
@@ -16,7 +6,6 @@
 #include "src/KomikManager.cpp"   // Include implementasi KomikManager
 #include "include/SearchFilter.h" // Include class SearchFilter
 #include "src/SearchFilter.cpp"   // Include implementasi SearchFilter
-// CATATAN: Biasanya tidak include .cpp, tapi untuk simplicity di sini kita include
 
 #include <iostream>  // Untuk pakai cout, cin
 #include <iomanip>   // Untuk pakai setw (set width) - format output
@@ -27,13 +16,9 @@
 
 using namespace std; // Biar tidak perlu tulis std:: terus
 
-// ===== FUNCTION PROTOTYPES (deklarasi fungsi) =====
-// Ini seperti "daftar isi" fungsi yang ada di file ini
-// Definisi (isi) fungsinya ada di bawah
-
-void clearScreen();                    // Fungsi untuk clear layar terminal
-void pause();                          // Fungsi untuk pause program (tunggu user tekan Enter)
-void printHeader(const string &title); // Fungsi untuk print header dengan border
+void clearScreen();
+void pause();
+void printHeader(const string &title);
 
 // Fungsi-fungsi menu
 vector<int> parseGenreChoices(const string &input);
@@ -89,7 +74,6 @@ int main()
 }
 
 // ===== FUNGSI CLEAR SCREEN =====
-// Fungsi untuk clear layar terminal
 void clearScreen()
 {
 // #ifdef = preprocessor directive, cek apakah macro _WIN32 ada
@@ -104,17 +88,12 @@ void clearScreen()
 }
 
 // ===== FUNGSI PAUSE =====
-// Fungsi untuk pause program sampai user tekan Enter
 void pause()
 {
     cout << "\nTekan Enter untuk lanjut...";
 
-    // cin.ignore() = abaikan semua karakter di input buffer sampai newline
-    // Kenapa perlu? Karena setelah cin >> choice, masih ada newline di buffer
-    // numeric_limits<streamsize>::max() = jumlah maksimal karakter yang diabaikan
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
-    // cin.get() = tunggu user tekan Enter
     cin.get();
 }
 
@@ -341,53 +320,6 @@ void mainMenu(BST &tree, KomikManager &manager)
     } while (choice != 0); // Loop terus sampai user pilih 0 (exit)
 }
 
-/*
- * ===== RINGKASAN main.cpp PART 1 =====
- *
- * 1. FUNGSI main():
- *    - Bikin objek KomikManager dan BST
- *    - (Opsional) Load sample data
- *    - Panggil mainMenu()
- *
- * 2. FUNGSI clearScreen():
- *    - Windows: system("cls")
- *    - Linux/Mac: system("clear")
- *
- * 3. FUNGSI pause():
- *    - cin.ignore() untuk clear buffer
- *    - cin.get() untuk tunggu Enter
- *
- * 4. FUNGSI printHeader():
- *    - Clear screen
- *    - Print border + title dengan warna
- *
- * 5. FUNGSI mainMenu():
- *    - Loop do-while sampai user pilih exit
- *    - Print menu
- *    - Input pilihan user
- *    - Error handling jika input salah
- *    - Switch case untuk panggil fungsi menu sesuai pilihan
- *
- * 6. KONSEP PENTING:
- *    - do-while: loop yang pasti jalan minimal 1 kali
- *    - switch-case: if-else yang lebih rapi
- *    - cin.fail(): cek apakah input error
- *    - cin.clear(): clear error flag
- *    - cin.ignore(): abaikan karakter di buffer
- *    - ANSI escape codes: untuk warna di terminal
- */
-
-/*
- * main.cpp - PART 2
- * CRUD KOMIK MENU
- *
- * Fungsi ini menangani semua operasi CRUD untuk komik:
- * - Create (Add)
- * - Read (View All, Search)
- * - Update
- * - Delete
- */
-
 // ===== FUNGSI CRUD KOMIK MENU =====
 void crudKomikMenu(BST &tree, KomikManager &manager)
 {
@@ -582,25 +514,26 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
             printHeader("FILTER BY AUTHOR");
             string key;
             cout << "Enter author name: ";
-            getline(cin >> ws, key);  // ws biar newline sisa input sebelumnya ke-skip
+            getline(cin >> ws, key); // ws biar newline sisa input sebelumnya ke-skip
 
-            SearchFilter filter;                          // bikin objek SearchFilter
-            vector<Komik*> results = filter.searchByAuthor(tree, key);  // pakai fungsi yang sudah ada
+            SearchFilter filter;                                        // bikin objek SearchFilter
+            vector<Komik *> results = filter.searchByAuthor(tree, key); // pakai fungsi yang sudah ada
 
             cout << "\nResult:\n";
             cout << string(80, '-') << endl;
             cout << left << setw(5) << "ID"
-                << setw(30) << "Title"
-                << setw(25) << "Author"
-                << setw(20) << "Genre(s)" << endl;
+                 << setw(30) << "Title"
+                 << setw(25) << "Author"
+                 << setw(20) << "Genre(s)" << endl;
             cout << string(80, '-') << endl;
 
             int count = 0;
-            for (Komik* comic : results) {
+            for (Komik *comic : results)
+            {
                 cout << left << setw(5) << comic->id
-                    << setw(30) << comic->title
-                    << setw(25) << comic->author
-                    << setw(20) << comic->genre << endl;
+                     << setw(30) << comic->title
+                     << setw(25) << comic->author
+                     << setw(20) << comic->genre << endl;
                 count++;
             }
 
@@ -618,25 +551,27 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
             printHeader("FILTER BY GENRE");
 
             string selectedGenre = getMultipleGenres(manager);
-            if (selectedGenre.empty()) break;
+            if (selectedGenre.empty())
+                break;
 
             SearchFilter filter;
-            vector<Komik*> results = filter.searchByGenre(tree, selectedGenre);
+            vector<Komik *> results = filter.searchByGenre(tree, selectedGenre);
 
             cout << "\nResult:\n";
             cout << string(80, '-') << endl;
             cout << left << setw(5) << "ID"
-                << setw(30) << "Title"
-                << setw(25) << "Author"
-                << setw(20) << "Genre(s)" << endl;
+                 << setw(30) << "Title"
+                 << setw(25) << "Author"
+                 << setw(20) << "Genre(s)" << endl;
             cout << string(80, '-') << endl;
 
             int count = 0;
-            for (Komik* comic : results) {
+            for (Komik *comic : results)
+            {
                 cout << left << setw(5) << comic->id
-                    << setw(30) << comic->title
-                    << setw(25) << comic->author
-                    << setw(20) << comic->genre << endl;
+                     << setw(30) << comic->title
+                     << setw(25) << comic->author
+                     << setw(20) << comic->genre << endl;
                 count++;
             }
 
@@ -755,61 +690,7 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
     } while (choice != 0);
 }
 
-/*
- * ===== RINGKASAN CRUD KOMIK MENU =====
- *
- * 1. ADD KOMIK (Case 1):
- *    - Input: title, author, genre
- *    - Tampilkan list available genres
- *    - Get ID baru dari manager
- *    - Bikin node baru dengan new
- *    - Insert ke tree
- *
- * 2. VIEW ALL (Case 2):
- *    - Cek apakah tree kosong
- *    - Pakai inOrder traversal untuk print semua komik
- *    - Lambda function untuk callback
- *    - Format output pakai setw() (tabel rapi)
- *
- * 3. SEARCH (Case 3):
- *    - Input title
- *    - Pakai tree.search()
- *    - Cek apakah nullptr (tidak ketemu)
- *    - Print info jika ketemu
- *
- * 4. UPDATE (Case 4):
- *    - Cari komik by title
- *    - Tampilkan data lama
- *    - Input data baru
- *    - Bikin node baru dengan data baru
- *    - Pakai tree.update()
- *
- * 5. DELETE (Case 5):
- *    - Cari komik by title
- *    - Tampilkan info komik
- *    - Minta konfirmasi (y/n)
- *    - Jika yes, pakai tree.remove()
- *
- * 6. KONSEP PENTING:
- *    - getline(): baca input dengan spasi
- *    - Lambda function: [](){} untuk callback
- *    - setw(): format output (tabel rapi)
- *    - new: alokasi memory dinamis
- *    - nullptr: pointer kosong
- *    - Scope { }: untuk deklarasi variable di case
- */
-
-/*
- * main.cpp - PART 3 (FINAL)
- * Menu-menu lainnya:
- * - CRUD Genre
- * - CRUD Author
- * - Traversal
- * - View Favorites
- */
-
 // ===== FUNGSI CRUD GENRE MENU =====
-// Fungsi ini hampir sama dengan CRUD Komik, tapi lebih sederhana
 void crudGenreMenu(KomikManager &manager, BST &tree)
 {
     int choice;
@@ -867,10 +748,7 @@ void crudGenreMenu(KomikManager &manager, BST &tree)
             cout << "Enter genre name: ";
             getline(cin, name);
 
-            // Tambah genre lewat manager
             manager.addGenre(name);
-            // Manager akan cek apakah genre sudah ada
-            // Jika belum ada, tambah ke list
 
             pause();
             break;
@@ -1159,67 +1037,3 @@ void viewFavoritesMenu(KomikManager &manager, BST &tree)
 
     pause();
 }
-
-/*
- * ===== RINGKASAN main.cpp PART 3 =====
- *
- * 1. CRUD GENRE MENU:
- *    - View: ambil dari manager.getAllGenres()
- *    - Add: manager.addGenre()
- *    - Update: manager.updateGenre() (update list + komik)
- *    - Delete: manager.deleteGenre()
- *
- * 2. CRUD AUTHOR MENU:
- *    - Sama seperti CRUD Genre
- *    - Hanya beda: genres → authors
- *
- * 3. TRAVERSAL MENU:
- *    - Pre-order: Root → Left → Right
- *    - In-order: Left → Root → Right (SORTED!)
- *    - Post-order: Left → Right → Root
- *    - Pakai lambda function untuk callback
- *
- * 4. VIEW FAVORITES MENU:
- *    - Ambil semua favorit dari manager
- *    - Loop semua user
- *    - Loop semua komik favorit per user
- *    - Cari title komik by ID pakai inOrder
- *    - Print dalam format tabel
- *
- * 5. KONSEP PENTING:
- *    - auto: otomatis detect tipe variable
- *    - for (const auto& x : container): range-based for loop
- *    - pair.first & pair.second: akses key-value di map
- *    - Lambda capture: [&var] = by reference, [var] = by value
- *    - empty(): cek apakah container kosong
- *    - size(): ukuran container
- *
- * ===== KESIMPULAN KESELURUHAN =====
- *
- * Program ini adalah implementasi lengkap Binary Search Tree untuk
- * sistem manajemen komik dengan fitur:
- *
- * 1. BST: Insert, Search, Delete, Update, Traversal
- * 2. CRUD: Comic, Genre, Author
- * 3. Favorites: Manage favorit per user
- * 4. Manager: Handle sample data & auto-increment ID
- *
- * KONSEP STRUKTUR DATA YANG DIPELAJARI:
- * - Binary Search Tree (BST)
- * - Rekursi (untuk operasi BST)
- * - Tree Traversal (Pre/In/Post-order)
- * - Vector (array dinamis)
- * - Map (dictionary)
- * - Lambda function (callback)
- *
- * KONSEP C++ YANG DIPELAJARI:
- * - Class & Struct
- * - Pointer & Reference
- * - Constructor & Destructor
- * - Operator overloading
- * - Memory management (new/delete)
- * - STL (vector, map, algorithm)
- * - Lambda expression
- * - Template (function<>)
- *
- */

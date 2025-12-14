@@ -42,7 +42,10 @@
     "C:/Program Files/MySQL/mysql-connector-c++-8.0.33-winx64/include",
     "C:/Program Files/MySQL/mysql-connector-c++-8.0.33-winx64/include/jdbc"
   ],
-  "C_Cpp_Runner.includeSearch": ["*", "**/*"],
+  "C_Cpp_Runner.includeSearch": [
+    "*",
+    "**/*"
+  ],
   "C_Cpp_Runner.excludeSearch": [
     "**/build",
     "**/build/**",
