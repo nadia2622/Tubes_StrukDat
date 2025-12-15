@@ -1,339 +1,96 @@
-// ===== INCLUDE HEADER FILES =====
-#include "include/Komik.h"        // Include struct Komik
-#include "include/BST.h"          // Include class BST
-#include "include/KomikManager.h" // Include class KomikManager
-#include "src/BST.cpp"            // Include implementasi BST
-#include "src/KomikManager.cpp"   // Include implementasi KomikManager
-#include "include/SearchFilter.h" // Include class SearchFilter
-#include "src/SearchFilter.cpp"   // Include implementasi SearchFilter
+/*
+ * main.cpp - FIXED VERSION
+ * 
+ * PENTING: File ini HANYA include .h files, TIDAK include .cpp!
+ * Compile dengan: g++ -o komik main.cpp src/*.cpp -I include -std=c++11
+ */
 
-#include <iostream>  // Untuk pakai cout, cin
-#include <iomanip>   // Untuk pakai setw (set width) - format output
-#include <limits>    // Untuk pakai numeric_limits
-#include <sstream>   // Untuk stringstream (parsing input)
-#include <algorithm> // Untuk sort() dan unique()
-#include <cctype>    // Untuk tolower()
+// ===== INCLUDE HANYA HEADER FILES (.h) =====
+#include "include/Komik.h"
+#include "include/BST.h"
+#include "include/KomikManager.h"
+// #include "include/SearchFilter.h"
+#include "include/Auth.h"
+#include "include/MenuSystem.h"
 
-using namespace std; // Biar tidak perlu tulis std:: terus
+#include "src/BST.cpp"
+#include "src/KomikManager.cpp"
+#include "src/MenuSystem.cpp"
+#include "src/Auth.cpp"
 
+#include <iostream>
+#include <iomanip>
+#include <limits>
+
+using namespace std;
+
+// ===== FUNCTION PROTOTYPES =====
 void clearScreen();
 void pause();
-void printHeader(const string &title);
+void printHeader(const string& title);
+void crudKomikMenu(BST& tree, KomikManager& manager);
+void crudGenreMenu(KomikManager& manager, BST& tree);
+void crudAuthorMenu(KomikManager& manager, BST& tree);
+void traversalMenu(BST& tree);
+void viewFavoritesMenu(KomikManager& manager, BST& tree);
+// void searchFilterMenu(BST& tree, SearchFilter& searcher);
 
-// Fungsi-fungsi menu
-vector<int> parseGenreChoices(const string &input);
-string getMultipleGenres(KomikManager &manager, bool allowEmpty = false);
-void mainMenu(BST &tree, KomikManager &manager);
-void crudKomikMenu(BST &tree, KomikManager &manager);
-void crudGenreMenu(KomikManager &manager, BST &tree);
-void crudAuthorMenu(KomikManager &manager, BST &tree);
-void traversalMenu(BST &tree);
-void viewFavoritesMenu(KomikManager &manager, BST &tree);
-
-// ===== FUNGSI MAIN =====
-// Fungsi main adalah "pintu masuk" program
-// Program dimulai dari sini
-int main()
-{
-    // ===== PRINT HEADER PROGRAM =====
-    // \033[1;36m = ANSI escape code untuk warna cyan + bold
-    // \033[0m = reset warna ke default
-    cout << "\033[1;36m==============================================\n";
+// ===== MAIN FUNCTION =====
+int main() {
+    cout << "\033[1;36m";
+    cout << "==============================================\n";
     cout << "   KOMIK MANAGEMENT SYSTEM\n";
-    cout << "==============================================\033[0m\n"
-         << endl;
-
-    // ===== INISIALISASI OBJEK =====
-
-    // Bikin objek KomikManager
-    // Constructor KomikManager() dipanggil otomatis
+    cout << "   with Authentication & Role-Based Access\n";
+    cout << "==============================================\033[0m\n" << endl;
+    
+    cout << "Initializing system...\n" << endl;
+    
     KomikManager manager;
-
-    // Bikin objek BST
-    // Constructor BST() dipanggil otomatis
     BST tree;
-
-    // ===== LOAD SAMPLE DATA (opsional) =====
-    // Baris ini di-comment karena mau mulai dengan tree kosong
-    // Jika mau auto-load sample data, uncomment 2 baris di bawah
-    // cout << "Loading sample comics...\n" << endl;
-    // manager.loadSampleData(tree);
-
-    // ===== PRINT MESSAGE =====
-    cout << "\033[32mSystem ready!\033[0m" << endl; // \033[32m = warna hijau
-    pause();                                        // Tunggu user tekan Enter
-
-    // ===== JALANKAN MAIN MENU =====
-    mainMenu(tree, manager);
-    // Fungsi ini akan loop terus sampai user pilih exit
-
-    // ===== EXIT MESSAGE =====
-    cout << "\033[36m\nThank you for using Komik Management System!\033[0m\n";
-
-    return 0; // Return 0 = program berakhir sukses
+    // SearchFilter searcher;
+    Auth auth;
+    
+    cout << "\033[32mSystem initialized!\033[0m\n" << endl;
+    pause();
+    
+    MenuSystem menuSystem(tree, manager, auth);
+    menuSystem.showMainMenu();
+    
+    cout << "\n\033[36mThank you for using Komik Management System!\033[0m" << endl;
+    
+    return 0;
 }
 
-// ===== FUNGSI CLEAR SCREEN =====
-void clearScreen()
-{
-// #ifdef = preprocessor directive, cek apakah macro _WIN32 ada
-#ifdef _WIN32
-    // Jika Windows, pakai command "cls"
-    system("cls");
-#else
-    // Jika Linux/Mac, pakai command "clear"
-    system("clear");
-#endif
-    // system() = jalankan command di terminal
+// ===== HELPER FUNCTIONS =====
+void clearScreen() {
+    #ifdef _WIN32
+        system("cls");
+    #else
+        system("clear");
+    #endif
 }
 
-// ===== FUNGSI PAUSE =====
-void pause()
-{
-    cout << "\nTekan Enter untuk lanjut...";
-
+void pause() {
+    cout << "\nPress Enter to continue...";
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
-
     cin.get();
 }
 
-// ===== FUNGSI PRINT HEADER =====
-// Fungsi untuk print header dengan border
-void printHeader(const string &title)
-{
-    clearScreen(); // Clear screen dulu
-
-    // Print border atas
-    cout << "\033[1;36m"; // Warna cyan + bold
+void printHeader(const string& title) {
+    clearScreen();
+    cout << "\033[1;36m";
     cout << "==============================================\n";
-    cout << "   " << title << "\n"; // Print title
-    cout << "==============================================\033[0m\n"
-         << endl;
-    // \033[0m = reset warna
+    cout << "   " << title << "\n";
+    cout << "==============================================\033[0m\n" << endl;
 }
 
-string toLowerCase(string str)
-{
-    // Mengubah setiap karakter dalam string menjadi huruf kecil
-    transform(str.begin(), str.end(), str.begin(),
-              [](unsigned char c)
-              { return tolower(c); });
-    return str;
-}
-
-// ===== PASTE CODE INI TEPAT SETELAH FUNGSI printHeader() =====
-// Cari fungsi printHeader() di main.cpp, lalu paste code ini DI BAWAHNYA
-
-// Function untuk parse input "1 3 5" jadi vector {1,3,5}
-vector<int> parseGenreChoices(const string &input)
-{
-    vector<int> choices;
-    stringstream ss(input);
-    int num;
-
-    while (ss >> num)
-    {
-        choices.push_back(num);
-    }
-
-    return choices;
-}
-
-// Function untuk input multiple genres
-string getMultipleGenres(KomikManager &manager, bool allowEmpty)
-{
-    vector<string> allGenres = manager.getAllGenres();
-
-    cout << "\n\033[1;36mAvailable genres:\033[0m\n";
-    for (size_t i = 0; i < allGenres.size(); i++)
-    {
-        cout << (i + 1) << ". " << allGenres[i] << endl;
-    }
-
-    vector<int> selectedIndices;
-    string input;
-    bool validInput = false;
-
-    do
-    {
-        if (allowEmpty)
-        {
-            cout << "\nSelect genres (press Enter to keep current, or e.g., '1 3 5'): ";
-        }
-        else
-        {
-            cout << "\nSelect genres (separate with space, e.g., '1 3 5'): ";
-        }
-        getline(cin, input);
-
-        selectedIndices = parseGenreChoices(input);
-
-        if (selectedIndices.empty())
-        {
-            if (allowEmpty)
-            {
-                return "";
-            }
-            else
-            {
-                cout << "\033[31mError: Please select at least one genre!\033[0m" << endl;
-                continue;
-            }
-        }
-
-        bool allValid = true;
-        vector<int> invalidNumbers;
-
-        for (int idx : selectedIndices)
-        {
-            if (idx < 1 || idx > (int)allGenres.size())
-            {
-                allValid = false;
-                invalidNumbers.push_back(idx);
-            }
-        }
-
-        if (!allValid)
-        {
-            cout << "\033[31mError: Invalid genre number(s): ";
-            for (size_t i = 0; i < invalidNumbers.size(); i++)
-            {
-                cout << invalidNumbers[i];
-                if (i < invalidNumbers.size() - 1)
-                    cout << ", ";
-            }
-            cout << "\033[0m" << endl;
-            cout << "Valid range: 1-" << allGenres.size() << endl;
-            continue;
-        }
-
-        validInput = true;
-
-    } while (!validInput);
-
-    sort(selectedIndices.begin(), selectedIndices.end());
-    selectedIndices.erase(
-        unique(selectedIndices.begin(), selectedIndices.end()),
-        selectedIndices.end());
-
-    string genreString = "";
-    for (size_t i = 0; i < selectedIndices.size(); i++)
-    {
-        int idx = selectedIndices[i] - 1;
-        genreString += allGenres[idx];
-        if (i < selectedIndices.size() - 1)
-        {
-            genreString += ", ";
-        }
-    }
-
-    cout << "\n\033[32mSelected genres: " << genreString << "\033[0m" << endl;
-
-    return genreString;
-}
-
-// ===== FUNGSI MAIN MENU =====
-// Ini adalah menu utama program
-void mainMenu(BST &tree, KomikManager &manager)
-{
-    // BST& tree = reference ke tree (tidak copy)
-    // KomikManager& manager = reference ke manager
-
-    int choice; // Variable untuk simpan pilihan user
-
-    // ===== LOOP MENU =====
-    // do-while = loop yang pasti jalan minimal 1 kali
-    do
-    {
-        printHeader("MAIN MENU"); // Print header
-
-        // ===== PRINT PILIHAN MENU =====
-        cout << "1. CRUD Komik\n";
-        cout << "2. CRUD Genre\n";
-        cout << "3. CRUD Author\n";
-        cout << "4. Traversal Tree\n";
-        cout << "5. View Favorites (All Users)\n";
-        cout << "6. Reload Sample Data\n";
-        cout << "0. Exit\n";
-        cout << "\nChoice: ";
-
-        // ===== INPUT PILIHAN USER =====
-        cin >> choice;
-        // cin >> = baca input dari keyboard
-
-        // ===== ERROR HANDLING INPUT =====
-        // Jika user input bukan angka (misal: huruf), cin.fail() = true
-        if (cin.fail())
-        {
-            cin.clear();                                         // Clear error flag
-            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Abaikan input salah
-            choice = -1;                                         // Set choice jadi -1 (invalid)
-        }
-
-        // ===== SWITCH CASE =====
-        // switch = if-else yang lebih rapi untuk banyak kondisi
-        switch (choice)
-        {
-        case 1:
-            // Jika pilih 1, panggil menu CRUD Komik
-            crudKomikMenu(tree, manager);
-            break; // break = keluar dari switch
-
-        case 2:
-            // Jika pilih 2, panggil menu CRUD Genre
-            crudGenreMenu(manager, tree);
-            break;
-
-        case 3:
-            // Jika pilih 3, panggil menu CRUD Author
-            crudAuthorMenu(manager, tree);
-            break;
-
-        case 4:
-            // Jika pilih 4, panggil menu Traversal
-            traversalMenu(tree);
-            break;
-
-        case 5:
-            // Jika pilih 5, panggil menu View Favorites
-            viewFavoritesMenu(manager, tree);
-            break;
-
-        case 6:
-            // Jika pilih 6, reload sample data
-            printHeader("RELOAD SAMPLE DATA");
-            manager.loadSampleData(tree); // Load sample data
-            cout << "\033[32mSample data reloaded!\033[0m" << endl;
-            pause();
-            break;
-
-        case 0:
-            // Jika pilih 0, exit
-            cout << "\nExiting..." << endl;
-            break;
-
-        default:
-            // default = jika tidak ada case yang match
-            cout << "\033[31mInvalid choice!\033[0m" << endl;
-            pause();
-        }
-    } while (choice != 0); // Loop terus sampai user pilih 0 (exit)
-}
-
-// ===== FUNGSI CRUD KOMIK MENU =====
-void crudKomikMenu(BST &tree, KomikManager &manager)
-{
+// ===== CRUD KOMIK MENU =====
+void crudKomikMenu(BST& tree, KomikManager& manager) {
     int choice;
-    SearchFilter filter;
-
-    do
-    {
+    
+    do {
         printHeader("CRUD COMIC");
-
-        // Print info jumlah komik di tree
         cout << "Total comics in tree: " << tree.count() << "\n\n";
-
-        // Print menu
         cout << "1. Add Komik\n";
         cout << "2. View All Komiks (In-Order)\n";
         cout << "3. Search Komik by Title\n";
@@ -343,697 +100,187 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
         cout << "7. Delete Komik\n";
         cout << "0. Back\n";
         cout << "\nChoice: ";
-
+        
         cin >> choice;
-        cin.ignore(); // Abaikan newline setelah cin >>
-        // PENTING: cin.ignore() di sini supaya getline() di bawah tidak skip
-
-        // Error handling
-        if (cin.fail())
-        {
+        cin.ignore();
+        
+        if (cin.fail()) {
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             choice = -1;
         }
-
-        switch (choice)
-        {
-        // ===== CASE 1: ADD KOMIK =====
-        case 1:
-        {
-            // { } = membuat scope baru
-            // Kenapa perlu? Karena kita deklarasi variable baru di dalam case
-            // Tanpa { }, variable akan conflict dengan case lain
-
-            printHeader("ADD COMIC");
-
-            // Deklarasi variable untuk simpan input
-            string title, author, genre;
-
-            // ===== INPUT TITLE =====
-            cout << "Enter title: ";
-            getline(cin, title);
-            // getline(cin, title) = baca satu baris input (sampai Enter)
-            // Kenapa pakai getline? Karena title bisa ada spasi
-            // Contoh: "Attack on Titan" (ada spasi)
-
-            // ===== INPUT AUTHOR =====
-            cout << "Enter author: ";
-            getline(cin, author);
-
-            // ===== TAMPILKAN AVAILABLE GENRES =====
-            genre = getMultipleGenres(manager);
-
-            // ===== INSERT KE TREE =====
-            // Get ID baru dari manager
-            int newId = manager.getNextId();
-
-            // Bikin node Komik baru dengan new
-            Komik *newKomik = new Komik(newId, title, author, genre);
-
-            // Insert ke tree
-            tree.insert(newKomik);
-
-            // Print success message
-            cout << "\n\033[32mBerhasil menambah komik baru!\033[0m" << endl;
-            cout << "ID: " << newId << endl;
-            cout << "Title: " << title << endl;
-            cout << "Author: " << author << endl;
-            cout << "Genre(s): " << genre << endl;
-
-            pause();
-            break;
-        }
-
-        // ===== CASE 2: VIEW ALL KOMIKS =====
-        case 2:
-        {
-            printHeader("ALL COMICS (IN-ORDER TRAVERSAL)");
-
-            // Cek apakah tree kosong
-            if (tree.isEmpty())
-            {
-                cout << "\033[33mKomik tidak ditemukan!\033[0m" << endl;
+        
+        switch (choice) {
+            case 1: {
+                printHeader("ADD COMIC");
+                string title, author, genre;
+                
+                cout << "Enter title: ";
+                getline(cin, title);
+                cout << "Enter author: ";
+                getline(cin, author);
+                
+                cout << "\nAvailable genres:\n";
+                vector<string> genres = manager.getAllGenres();
+                for (size_t i = 0; i < genres.size(); i++) {
+                    cout << (i + 1) << ". " << genres[i] << endl;
+                }
+                cout << "\nEnter genre: ";
+                getline(cin, genre);
+                
+                int newId = manager.getNextId();
+                Komik* newKomik = new Komik(newId, title, author, genre);
+                tree.insert(newKomik);
+                
+                cout << "\033[32mKomik added successfully with ID: " << newId << "\033[0m" << endl;
+                pause();
+                break;
             }
-            else
-            {
-                // ===== PRINT HEADER TABEL =====
-                // setw(n) = set width (lebar kolom) = n karakter
-                // left = align kiri
-                cout << left << setw(5) << "ID"
-                     << setw(30) << "Title"
-                     << setw(25) << "Author"
-                     << setw(20) << "Genre(s)" << endl;
-
-                // Print garis pembatas
-                // string(75, '-') = bikin string berisi 75 karakter '-'
-                cout << string(80, '-') << endl;
-
-                // ===== PRINT SEMUA KOMIK =====
-                // Pakai inOrder traversal (hasil terurut by title)
-                tree.inOrder([](Komik *comic)
-                             {
-                        // Lambda function: [](parameter) { body }
-                        // [] = lambda capture (kosong = tidak tangkap variable luar)
-                        // Komik* comic = parameter
-                        
-                        // Print data komik dalam format tabel
+            
+            case 2: {
+                printHeader("ALL COMICS (IN-ORDER TRAVERSAL)");
+                
+                if (tree.isEmpty()) {
+                    cout << "\033[33mNo comics found!\033[0m" << endl;
+                } else {
+                    cout << left << setw(5) << "ID"
+                         << setw(30) << "Title"
+                         << setw(25) << "Author"
+                         << setw(15) << "Genre" << endl;
+                    cout << string(75, '-') << endl;
+                    
+                    tree.inOrder([](Komik* comic) {
                         cout << left << setw(5) << comic->id
                              << setw(30) << comic->title
                              << setw(25) << comic->author
-                             << setw(20) << comic->genre << endl; });
-
-                // Print total
-                cout << "\nTotal: " << tree.count() << " comics" << endl;
-            }
-
-            pause();
-            break;
-        }
-
-        // ===== CASE 3: SEARCH KOMIK (PARTIAL & CASE INSENSITIVE) =====
-        case 3:
-        {
-            printHeader("SEARCH COMIC BY TITLE");
-
-            string inputTitle;
-            cout << "Enter keyword (e.g., 'titan'): ";
-            getline(cin, inputTitle);
-
-            // 1. Ubah keyword user menjadi lowercase
-            string searchKey = toLowerCase(inputTitle);
-
-            int foundCount = 0; // Hitung berapa komik yang ketemu
-
-            cout << "\nSearch Results for '" << inputTitle << "':\n";
-            cout << string(80, '-') << endl;
-            // Header Tabel
-            cout << left << setw(5) << "ID"
-                 << setw(30) << "Title"
-                 << setw(25) << "Author"
-                 << setw(20) << "Genre(s)" << endl;
-            cout << string(80, '-') << endl;
-
-            // 2. Traversal In-Order untuk cek semua data
-            tree.inOrder([&](Komik *comic)
-                         {
-                // Ambil judul komik dan ubah ke lowercase
-                string titleLower = toLowerCase(comic->title);
-
-                // 3. Cek apakah KEYWORD ada di dalam JUDUL
-                // string::npos artinya "no position" (tidak ketemu)
-                if (titleLower.find(searchKey) != string::npos) {
+                             << setw(15) << comic->genre << endl;
+                    });
                     
-                    // Jika ketemu (tidak sama dengan npos), print datanya
-                    cout << left << setw(5) << comic->id
-                         << setw(30) << comic->title
-                         << setw(25) << comic->author
-                         << setw(20) << comic->genre << endl;
-                    
-                    foundCount++; // Tambah hitungan ketemu
-                } });
-
-            cout << string(80, '-') << endl;
-
-            // 4. Cek apakah ada hasil
-            if (foundCount > 0)
-            {
-                cout << "\n\033[32mFound " << foundCount << " comic(s) matching your keyword.\033[0m\n";
-            }
-            else
-            {
-                cout << "\n\033[31mNo comics found with keyword: " << inputTitle << "\033[0m" << endl;
-            }
-
-            pause();
-            break;
-        }
-
-        case 4:
-        {
-            printHeader("FILTER BY AUTHOR");
-            string key;
-            cout << "Enter author name: ";
-            getline(cin >> ws, key); // ws biar newline sisa input sebelumnya ke-skip
-
-            SearchFilter filter;                                        // bikin objek SearchFilter
-            vector<Komik *> results = filter.searchByAuthor(tree, key); // pakai fungsi yang sudah ada
-
-            cout << "\nResult:\n";
-            cout << string(80, '-') << endl;
-            cout << left << setw(5) << "ID"
-                 << setw(30) << "Title"
-                 << setw(25) << "Author"
-                 << setw(20) << "Genre(s)" << endl;
-            cout << string(80, '-') << endl;
-
-            int count = 0;
-            for (Komik *comic : results)
-            {
-                cout << left << setw(5) << comic->id
-                     << setw(30) << comic->title
-                     << setw(25) << comic->author
-                     << setw(20) << comic->genre << endl;
-                count++;
-            }
-
-            if (count == 0)
-                cout << "\033[31mNo match found.\033[0m\n";
-            else
-                cout << "\033[32mFound " << count << " result(s)\033[0m\n";
-
-            pause();
-            break;
-        }
-
-        case 5:
-        {
-            printHeader("FILTER BY GENRE");
-
-            string selectedGenre = getMultipleGenres(manager);
-            if (selectedGenre.empty())
-                break;
-
-            SearchFilter filter;
-            vector<Komik *> results = filter.searchByGenre(tree, selectedGenre);
-
-            cout << "\nResult:\n";
-            cout << string(80, '-') << endl;
-            cout << left << setw(5) << "ID"
-                 << setw(30) << "Title"
-                 << setw(25) << "Author"
-                 << setw(20) << "Genre(s)" << endl;
-            cout << string(80, '-') << endl;
-
-            int count = 0;
-            for (Komik *comic : results)
-            {
-                cout << left << setw(5) << comic->id
-                     << setw(30) << comic->title
-                     << setw(25) << comic->author
-                     << setw(20) << comic->genre << endl;
-                count++;
-            }
-
-            if (count == 0)
-                cout << "\033[31mNo match found.\033[0m\n";
-            else
-                cout << "\033[32mFound " << count << " result(s)\033[0m\n";
-
-            pause();
-            break;
-        }
-
-        // ===== CASE 6: UPDATE KOMIK =====
-        case 6:
-        {
-            printHeader("UPDATE COMIC");
-
-            string oldTitle;
-            cout << "Enter title of comic to update: ";
-            getline(cin, oldTitle);
-
-            // Cari komik by title
-            Komik *found = tree.search(oldTitle);
-
-            if (found == nullptr)
-            {
-                // Komik tidak ditemukan
-                cout << "\033[31mKomik not found!\033[0m" << endl;
-                pause();
-                break; // Keluar dari case 4
-            }
-
-            // ===== TAMPILKAN DATA LAMA =====
-            cout << "\n\033[36mCurrent data:\033[0m\n";
-            found->display();
-
-            // ===== INPUT DATA BARU =====
-            string newTitle, newAuthor, newGenre;
-
-            cout << "\nEnter new data:\n";
-            cout << "Title: ";
-            getline(cin, newTitle);
-            cout << "Author: ";
-            getline(cin, newAuthor);
-
-            cout << "\n\033[36mGenre(s) saat ini: " << found->genre << "\033[0m";
-
-            // ===== INPUT MULTIPLE GENRES =====
-            newGenre = getMultipleGenres(manager);
-
-            // ===== UPDATE TREE =====
-            // Bikin node komik baru dengan data baru
-            Komik *updatedKomik = new Komik(found->id, newTitle, newAuthor, newGenre);
-
-            // Update tree
-            tree.update(oldTitle, updatedKomik);
-
-            cout << "\033[32mKomik berhasil diperbarui!\033[0m" << endl;
-            pause();
-            break;
-        }
-
-        // ===== CASE 7: DELETE KOMIK =====
-        case 7:
-        {
-            printHeader("DELETE COMIC");
-
-            string title;
-            cout << "Enter title of comic to delete: ";
-            getline(cin, title);
-
-            // Cari komik by title
-            Komik *found = tree.search(title);
-
-            if (found == nullptr)
-            {
-                cout << "\033[31mKomik tidak ditemukan!\033[0m" << endl;
+                    cout << "\nTotal: " << tree.count() << " comics" << endl;
+                }
                 pause();
                 break;
             }
-
-            // ===== KONFIRMASI DELETE =====
-            cout << "\nApakah Anda yakin ingin menghapus komik ini?\n";
-            found->display(); // Tampilkan info komik
-            cout << "\n(y/n): ";
-
-            char confirm;
-            cin >> confirm;
-            // Hanya baca 1 karakter (y atau n)
-
-            // Cek konfirmasi
-            if (confirm == 'y' || confirm == 'Y')
-            {
-                // Jika yes, hapus dari tree
-                tree.remove(title);
-                cout << "\033[32mKomik berhasil dihapus!\033[0m" << endl;
-            }
-            else
-            {
-                // Jika no, cancel
-                cout << "Delete cancelled." << endl;
-            }
-
-            pause();
-            break;
-        }
-
-        case 0:
-            // Back ke main menu
-            break;
-
-        default:
-            cout << "\033[31mPilihan tidak valid!\033[0m" << endl;
-            pause();
-        }
-    } while (choice != 0);
-}
-
-// ===== FUNGSI CRUD GENRE MENU =====
-void crudGenreMenu(KomikManager &manager, BST &tree)
-{
-    int choice;
-
-    do
-    {
-        printHeader("CRUD GENRE");
-
-        cout << "1. View All Genres\n";
-        cout << "2. Add Genre\n";
-        cout << "3. Update Genre\n";
-        cout << "4. Delete Genre\n";
-        cout << "0. Back\n";
-        cout << "\nChoice: ";
-
-        cin >> choice;
-        cin.ignore(); // Abaikan newline
-
-        switch (choice)
-        {
-        // ===== CASE 1: VIEW ALL GENRES =====
-        case 1:
-        {
-            printHeader("ALL GENRES");
-
-            // Ambil semua genre dari manager
-            vector<string> genres = manager.getAllGenres();
-
-            if (genres.empty())
-            {
-                // empty() = cek apakah vector kosong
-                cout << "\033[33mNo genres found!\033[0m" << endl;
-            }
-            else
-            {
-                cout << "Total genres: " << genres.size() << "\n\n";
-
-                // Loop print semua genre
-                for (size_t i = 0; i < genres.size(); i++)
-                {
-                    cout << (i + 1) << ". " << genres[i] << endl;
+            
+            case 3: {
+                printHeader("SEARCH COMIC");
+                string title;
+                
+                cout << "Enter title to search: ";
+                getline(cin, title);
+                
+                Komik* found = tree.search(title);
+                if (found != nullptr) {
+                    cout << "\033[32m\nKomik found!\033[0m\n";
+                    found->display();
+                } else {
+                    cout << "\033[31mKomik not found!\033[0m" << endl;
                 }
+                pause();
+                break;
             }
-
-            pause();
-            break;
-        }
-
-        // ===== CASE 2: ADD GENRE =====
-        case 2:
-        {
-            printHeader("ADD GENRE");
-
-            string name;
-            cout << "Enter genre name: ";
-            getline(cin, name);
-
-            manager.addGenre(name);
-
-            pause();
-            break;
-        }
-
-        // ===== CASE 3: UPDATE GENRE =====
-        case 3:
-        {
-            printHeader("UPDATE GENRE");
-
-            string oldName, newName;
-
-            cout << "Enter old genre name: ";
-            getline(cin, oldName);
-
-            cout << "Enter new genre name: ";
-            getline(cin, newName);
-
-            // Update genre lewat manager
-            manager.updateGenre(oldName, newName, tree);
-            // Manager akan:
-            // 1. Update nama genre di list
-            // 2. Update genre di semua komik yang pakai genre ini
-
-            pause();
-            break;
-        }
-
-        // ===== CASE 4: DELETE GENRE =====
-        case 4:
-        {
-            printHeader("DELETE GENRE");
-
-            string name;
-            cout << "Enter genre name to delete: ";
-            getline(cin, name);
-
-            // Minta konfirmasi
-            cout << "Are you sure? (y/n): ";
-            char confirm;
-            cin >> confirm;
-
-            if (confirm == 'y' || confirm == 'Y')
-            {
-                manager.deleteGenre(name);
-            }
-
-            pause();
-            break;
-        }
-        }
-    } while (choice != 0);
-}
-
-// ===== FUNGSI CRUD AUTHOR MENU =====
-// Fungsi ini IDENTIK dengan CRUD Genre
-// Hanya beda: genres → authors
-void crudAuthorMenu(KomikManager &manager, BST &tree)
-{
-    int choice;
-
-    do
-    {
-        printHeader("CRUD AUTHOR");
-
-        cout << "1. View All Authors\n";
-        cout << "2. Add Author\n";
-        cout << "3. Update Author\n";
-        cout << "4. Delete Author\n";
-        cout << "0. Back\n";
-        cout << "\nChoice: ";
-
-        cin >> choice;
-        cin.ignore();
-
-        switch (choice)
-        {
-        case 1:
-        {
-            printHeader("ALL AUTHORS");
-            vector<string> authors = manager.getAllAuthors();
-
-            if (authors.empty())
-            {
-                cout << "\033[33mNo authors found!\033[0m" << endl;
-            }
-            else
-            {
-                cout << "Total authors: " << authors.size() << "\n\n";
-                for (size_t i = 0; i < authors.size(); i++)
-                {
-                    cout << (i + 1) << ". " << authors[i] << endl;
+            
+            case 4: {
+                printHeader("UPDATE COMIC");
+                string oldTitle;
+                
+                cout << "Enter title of comic to update: ";
+                getline(cin, oldTitle);
+                
+                Komik* found = tree.search(oldTitle);
+                if (found == nullptr) {
+                    cout << "\033[31mKomik not found!\033[0m" << endl;
+                    pause();
+                    break;
                 }
+                
+                string newTitle, newAuthor, newGenre;
+                cout << "\nCurrent data:\n";
+                found->display();
+                
+                cout << "\nEnter new data:\n";
+                cout << "Title: ";
+                getline(cin, newTitle);
+                cout << "Author: ";
+                getline(cin, newAuthor);
+                cout << "Genre: ";
+                getline(cin, newGenre);
+                
+                Komik* updatedKomik = new Komik(found->id, newTitle, newAuthor, newGenre);
+                tree.update(oldTitle, updatedKomik);
+                
+                cout << "\033[32mKomik updated successfully!\033[0m" << endl;
+                pause();
+                break;
             }
-            pause();
-            break;
-        }
-
-        case 2:
-        {
-            printHeader("ADD AUTHOR");
-            string name;
-            cout << "Enter author name: ";
-            getline(cin, name);
-            manager.addAuthor(name);
-            pause();
-            break;
-        }
-
-        case 3:
-        {
-            printHeader("UPDATE AUTHOR");
-            string oldName, newName;
-            cout << "Enter old author name: ";
-            getline(cin, oldName);
-            cout << "Enter new author name: ";
-            getline(cin, newName);
-            manager.updateAuthor(oldName, newName, tree);
-            pause();
-            break;
-        }
-
-        case 4:
-        {
-            printHeader("DELETE AUTHOR");
-            string name;
-            cout << "Enter author name to delete: ";
-            getline(cin, name);
-
-            cout << "Are you sure? (y/n): ";
-            char confirm;
-            cin >> confirm;
-
-            if (confirm == 'y' || confirm == 'Y')
-            {
-                manager.deleteAuthor(name);
+            
+            case 5: {
+                printHeader("DELETE COMIC");
+                string title;
+                
+                cout << "Enter title of comic to delete: ";
+                getline(cin, title);
+                
+                Komik* found = tree.search(title);
+                if (found == nullptr) {
+                    cout << "\033[31mKomik not found!\033[0m" << endl;
+                    pause();
+                    break;
+                }
+                
+                cout << "\nAre you sure you want to delete this comic?\n";
+                found->display();
+                cout << "\n(y/n): ";
+                
+                char confirm;
+                cin >> confirm;
+                
+                if (confirm == 'y' || confirm == 'Y') {
+                    tree.remove(title);
+                    cout << "\033[32mKomik deleted successfully!\033[0m" << endl;
+                } else {
+                    cout << "Delete cancelled." << endl;
+                }
+                pause();
+                break;
             }
-            pause();
-            break;
-        }
-        }
-    } while (choice != 0);
-}
-
-// ===== FUNGSI TRAVERSAL MENU =====
-// Menu untuk test 3 jenis traversal
-void traversalMenu(BST &tree)
-{
-    int choice;
-
-    do
-    {
-        printHeader("TREE TRAVERSAL");
-
-        cout << "1. Pre-Order Traversal\n";
-        cout << "2. In-Order Traversal\n";
-        cout << "3. Post-Order Traversal\n";
-        cout << "0. Back\n";
-        cout << "\nChoice: ";
-
-        cin >> choice;
-
-        switch (choice)
-        {
-        // ===== CASE 1: PRE-ORDER =====
-        case 1:
-            printHeader("PRE-ORDER TRAVERSAL");
-            cout << "Order: Root -> Left -> Right\n\n";
-
-            if (tree.isEmpty())
-            {
-                cout << "\033[33mTree is empty!\033[0m" << endl;
-            }
-            else
-            {
-                // Pakai preOrder dengan lambda function
-                tree.preOrder([](Komik *comic)
-                              {
-                                  comic->display(); // Print info komik
-                              });
-            }
-
-            pause();
-            break;
-
-        // ===== CASE 2: IN-ORDER =====
-        case 2:
-            printHeader("IN-ORDER TRAVERSAL");
-            cout << "Order: Left -> Root -> Right (Sorted)\n\n";
-
-            if (tree.isEmpty())
-            {
-                cout << "\033[33mTree is empty!\033[0m" << endl;
-            }
-            else
-            {
-                tree.inOrder([](Komik *comic)
-                             { comic->display(); });
-                // PENTING: In-order menghasilkan data TERURUT!
-            }
-
-            pause();
-            break;
-
-        // ===== CASE 3: POST-ORDER =====
-        case 3:
-            printHeader("POST-ORDER TRAVERSAL");
-            cout << "Order: Left -> Right -> Root\n\n";
-
-            if (tree.isEmpty())
-            {
-                cout << "\033[33mTree is empty!\033[0m" << endl;
-            }
-            else
-            {
-                tree.postOrder([](Komik *comic)
-                               { comic->display(); });
-            }
-
-            pause();
-            break;
+            
+            case 0:
+                break;
+                
+            default:
+                cout << "\033[31mInvalid choice!\033[0m" << endl;
+                pause();
         }
     } while (choice != 0);
 }
 
-// ===== FUNGSI VIEW FAVORITES MENU =====
-// Fungsi untuk tampilkan favorit semua user
-void viewFavoritesMenu(KomikManager &manager, BST &tree)
-{
-    printHeader("USER FAVORITES");
-
-    // Ambil semua favorit dari manager
-    // auto = otomatis detect tipe (map<string, vector<int>>)
-    auto allFavorites = manager.getAllFavorites();
-
-    if (allFavorites.empty())
-    {
-        cout << "\033[33mNo favorites found!\033[0m" << endl;
-    }
-    else
-    {
-        // ===== PRINT HEADER TABEL =====
-        cout << left << setw(15) << "Username"
-             << setw(10) << "Komik ID"
-             << setw(30) << "Komik Title" << endl;
-        cout << string(55, '-') << endl;
-
-        // ===== LOOP SEMUA USER =====
-        // for (const auto& userFav : allFavorites)
-        // Artinya: untuk setiap pair<username, vector<ID>> di map
-        for (const auto &userFav : allFavorites)
-        {
-            // userFav adalah pair<string, vector<int>>
-            // .first = key (username)
-            // .second = value (vector<int> berisi ID komik)
-
-            string username = userFav.first;       // Ambil username
-            vector<int> comicIds = userFav.second; // Ambil list ID komik
-
-            // ===== LOOP SEMUA KOMIK FAVORIT USER INI =====
-            for (int comicId : comicIds)
-            {
-                // Cari title komik by ID
-                string comicTitle = "Unknown"; // Default jika tidak ketemu
-
-                // Pakai inOrder untuk cari komik by ID
-                tree.inOrder([&comicTitle, comicId](Komik *comic)
-                             {
-                    // [&comicTitle, comicId] = lambda capture
-                    // & = capture by reference (bisa ubah comicTitle)
-                    // comicId = capture by value (tidak bisa ubah)
-                    
-                    if (comic->id == comicId) {
-                        comicTitle = comic->title;  // Update comicTitle
-                    } });
-
-                // Print row tabel
-                cout << left << setw(15) << username
-                     << setw(10) << comicId
-                     << setw(30) << comicTitle << endl;
-            }
-        }
-
-        cout << "\nTotal users with favorites: " << allFavorites.size() << endl;
-    }
-
+// ===== CRUD GENRE MENU (SIMPLIFIED) =====
+void crudGenreMenu(KomikManager& manager, BST& tree) {
+    cout << "CRUD Genre Menu - To be implemented" << endl;
     pause();
 }
+
+// ===== CRUD AUTHOR MENU (SIMPLIFIED) =====
+void crudAuthorMenu(KomikManager& manager, BST& tree) {
+    cout << "CRUD Author Menu - To be implemented" << endl;
+    pause();
+}
+
+// ===== TRAVERSAL MENU (SIMPLIFIED) =====
+void traversalMenu(BST& tree) {
+    cout << "Traversal Menu - To be implemented" << endl;
+    pause();
+}
+
+// ===== VIEW FAVORITES MENU (SIMPLIFIED) =====
+void viewFavoritesMenu(KomikManager& manager, BST& tree) {
+    cout << "View Favorites - To be implemented" << endl;
+    pause();
+}
+
+// ===== SEARCH FILTER MENU (SIMPLIFIED) =====
+// void searchFilterMenu(BST& tree, SearchFilter& searcher) {
+//     cout << "Search & Filter Menu - To be implemented" << endl;
+//     pause();
+// }
