@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <iomanip>
+#include <sstream>
 
 using namespace std;
 
@@ -32,6 +33,25 @@ bool SearchFilter::containsIgnoreCase(const string &str1, const string &str2)
     string lower1 = toLowerCase(str1);
     string lower2 = toLowerCase(str2);
     return lower1.find(lower2) != string::npos;
+}
+
+vector<string> splitString(const string &s, char delimiter)
+{
+    vector<string> tokens;
+    string token;
+    istringstream tokenStream(s);
+    while (getline(tokenStream, token, delimiter))
+    {
+        // Hapus spasi di awal/akhir jika ada
+        size_t first = token.find_first_not_of(' ');
+        if (string::npos == first)
+        {
+            continue;
+        }
+        size_t last = token.find_last_not_of(' ');
+        tokens.push_back(token.substr(first, (last - first + 1)));
+    }
+    return tokens;
 }
 
 // ===== HELPER: DFS SEARCH =====
@@ -92,20 +112,35 @@ vector<Komik *> SearchFilter::searchByAuthor(BST &tree, const string &author)
 }
 
 // ===== SEARCH BY GENRE =====
-vector<Komik *> SearchFilter::searchByGenre(BST &tree, const string &genre)
+vector<Komik *> SearchFilter::searchByGenre(BST &tree, const string &genreInput)
 {
     vector<Komik *> results;
 
-    if (genre.empty())
+    if (genreInput.empty())
     {
         cout << "\033[31mError: Genre cannot be empty!\033[0m" << endl;
         return results;
     }
 
-    // Get all komiks using in-order traversal
-    tree.inOrder([&results, &genre, this](Komik *comic)
+    // 1. Pecah input user menjadi list genre
+    // Contoh: User pilih "Action, Horror" -> jadi vector {"Action", "Horror"}
+    vector<string> searchTags = splitString(genreInput, ',');
+
+    tree.inOrder([&](Komik *comic)
                  {
-        if (containsIgnoreCase(comic->genre, genre)) {
+        bool matchAll = true; // Anggap match dulu
+
+        // 2. Cek apakah Komik ini memiliki SEMUA genre yang dicari
+        for (const string &tag : searchTags) {
+            // Jika ada SATU saja genre yang tidak dimiliki komik ini, maka gagal
+            if (!containsIgnoreCase(comic->genre, tag)) {
+                matchAll = false;
+                break;
+            }
+        }
+
+        // 3. Jika lolos semua kriteria, masukkan ke result
+        if (matchAll) {
             results.push_back(comic);
         } });
 

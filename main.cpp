@@ -1,6 +1,6 @@
 /*
- * main.cpp - COMPLETE VERSION
- * Komik Management System with Authentication & Multiple Genre Support
+ * main.cpp - COMPLETE VERSION WITH SQLITE DATABASE
+ * Komik Management System with Authentication & Database Integration
  */
 
 // ===== INCLUDE HEADER FILES =====
@@ -9,17 +9,22 @@
 #include "include/KomikManager.h"
 #include "include/Auth.h"
 #include "include/MenuSystem.h"
+#include "include/SearchFilter.h"
+#include "include/Database.h"
 
+// ===== INCLUDE IMPLEMENTATION FILES =====
 #include "src/BST.cpp"
 #include "src/KomikManager.cpp"
 #include "src/MenuSystem.cpp"
 #include "src/Auth.cpp"
+#include "src/SearchFilter.cpp"
+#include "src/Database.cpp"
 
 #include <iostream>
 #include <iomanip>
 #include <limits>
-#include <sstream>   // Untuk parseGenreChoices
-#include <algorithm> // Untuk sort() dan unique()
+#include <sstream>
+#include <algorithm>
 
 using namespace std;
 
@@ -33,9 +38,283 @@ void crudAuthorMenu(KomikManager &manager, BST &tree);
 void traversalMenu(BST &tree);
 void viewFavoritesMenu(KomikManager &manager, BST &tree);
 
-// NEW: Multiple Genre Support
+// Helper functions
 vector<int> parseGenreChoices(const string &input);
 string getMultipleGenres(KomikManager &manager, bool allowEmpty = false);
+
+// Global database connection
+Database dbConnection;
+
+void databaseInspectorMenu(Database &db, BST &tree)
+{
+    int choice;
+
+    do
+    {
+        printHeader("DATABASE INSPECTOR");
+
+        cout << "1. View Komiks Table\n";
+        cout << "2. View Users Table\n";
+        cout << "3. View Genres Table\n";
+        cout << "4. View Authors Table\n";
+        cout << "5. View Favorites Table\n";
+        cout << "6. Database Statistics\n";
+        cout << "7. Run Custom SQL Query\n";
+        cout << "0. Back\n";
+        cout << "\nChoice: ";
+
+        cin >> choice;
+        cin.ignore();
+
+        switch (choice)
+        {
+        case 1:
+        {
+            printHeader("KOMIKS TABLE");
+            vector<Komik *> komiks = db.getAllKomiks();
+
+            if (komiks.empty())
+            {
+                cout << "\033[33mNo data in komiks table!\033[0m" << endl;
+            }
+            else
+            {
+                cout << left << setw(5) << "ID"
+                     << setw(30) << "Title"
+                     << setw(25) << "Author"
+                     << setw(20) << "Genre(s)" << endl;
+                cout << string(80, '-') << endl;
+
+                for (Komik *k : komiks)
+                {
+                    cout << left << setw(5) << k->id
+                         << setw(30) << k->title
+                         << setw(25) << k->author
+                         << setw(20) << k->genre << endl;
+                }
+
+                cout << "\nTotal records: " << komiks.size() << endl;
+            }
+            pause();
+            break;
+        }
+
+        case 2:
+        {
+            printHeader("USERS TABLE");
+            vector<User> users = db.getAllUsers();
+
+            if (users.empty())
+            {
+                cout << "\033[33mNo data in users table!\033[0m" << endl;
+            }
+            else
+            {
+                cout << left << setw(5) << "ID"
+                     << setw(20) << "Username"
+                     << setw(40) << "Password (Hashed)"
+                     << setw(10) << "Role" << endl;
+                cout << string(75, '-') << endl;
+
+                for (const User &u : users)
+                {
+                    cout << left << setw(5) << u.id
+                         << setw(20) << u.username
+                         << setw(40) << u.password.substr(0, 37) + "..."
+                         << setw(10) << u.role << endl;
+                }
+
+                cout << "\nTotal records: " << users.size() << endl;
+            }
+            pause();
+            break;
+        }
+
+        case 3:
+        {
+            printHeader("GENRES TABLE");
+            vector<string> genres = db.getAllGenres();
+
+            if (genres.empty())
+            {
+                cout << "\033[33mNo data in genres table!\033[0m" << endl;
+            }
+            else
+            {
+                cout << "Available Genres:\n\n";
+                for (size_t i = 0; i < genres.size(); i++)
+                {
+                    cout << (i + 1) << ". " << genres[i] << endl;
+                }
+
+                cout << "\nTotal records: " << genres.size() << endl;
+            }
+            pause();
+            break;
+        }
+
+        case 4:
+        {
+            printHeader("AUTHORS TABLE");
+            vector<string> authors = db.getAllAuthors();
+
+            if (authors.empty())
+            {
+                cout << "\033[33mNo data in authors table!\033[0m" << endl;
+            }
+            else
+            {
+                cout << "Available Authors:\n\n";
+                for (size_t i = 0; i < authors.size(); i++)
+                {
+                    cout << (i + 1) << ". " << authors[i] << endl;
+                }
+
+                cout << "\nTotal records: " << authors.size() << endl;
+            }
+            pause();
+            break;
+        }
+
+        case 5:
+        {
+            printHeader("FAVORITES TABLE");
+
+            vector<User> users = db.getAllUsers();
+            bool hasAnyFavorites = false;
+
+            cout << left << setw(20) << "Username"
+                 << setw(12) << "Komik ID"
+                 << setw(35) << "Komik Title" << endl;
+            cout << string(67, '-') << endl;
+
+            for (const User &user : users)
+            {
+                vector<int> favs = db.getFavoritesByUser(user.username);
+
+                if (!favs.empty())
+                {
+                    hasAnyFavorites = true;
+                    for (int komikId : favs)
+                    {
+                        string title = "Unknown";
+                        tree.inOrder([&title, komikId](Komik *k)
+                                     {
+                            if (k->id == komikId) {
+                                title = k->title;
+                            } });
+
+                        cout << left << setw(20) << user.username
+                             << setw(12) << komikId
+                             << setw(35) << title << endl;
+                    }
+                }
+            }
+
+            if (!hasAnyFavorites)
+            {
+                cout << "\033[33mNo favorites in database!\033[0m" << endl;
+            }
+
+            pause();
+            break;
+        }
+
+        case 6:
+        {
+            printHeader("DATABASE STATISTICS");
+
+            vector<Komik *> komiks = db.getAllKomiks();
+            vector<User> users = db.getAllUsers();
+            vector<string> genres = db.getAllGenres();
+            vector<string> authors = db.getAllAuthors();
+
+            // Count total favorites
+            int totalFavorites = 0;
+            for (const User &user : users)
+            {
+                totalFavorites += db.getFavoritesByUser(user.username).size();
+            }
+
+            cout << "\033[1;36m╔══════════════════════════════════════╗\033[0m\n";
+            cout << "\033[1;36m║      DATABASE STATISTICS             ║\033[0m\n";
+            cout << "\033[1;36m╚══════════════════════════════════════╝\033[0m\n\n";
+
+            cout << left << setw(25) << "Total Komiks:"
+                 << "\033[32m" << komiks.size() << "\033[0m" << endl;
+            cout << left << setw(25) << "Total Users:"
+                 << "\033[32m" << users.size() << "\033[0m" << endl;
+            cout << left << setw(25) << "Total Genres:"
+                 << "\033[32m" << genres.size() << "\033[0m" << endl;
+            cout << left << setw(25) << "Total Authors:"
+                 << "\033[32m" << authors.size() << "\033[0m" << endl;
+            cout << left << setw(25) << "Total Favorites:"
+                 << "\033[32m" << totalFavorites << "\033[0m" << endl;
+
+            cout << "\n\033[1;36m╔══════════════════════════════════════╗\033[0m\n";
+            cout << "\033[1;36m║      USER BREAKDOWN                  ║\033[0m\n";
+            cout << "\033[1;36m╚══════════════════════════════════════╝\033[0m\n\n";
+
+            int adminCount = 0, userCount = 0;
+            for (const User &u : users)
+            {
+                if (u.role == "admin")
+                    adminCount++;
+                else
+                    userCount++;
+            }
+
+            cout << left << setw(25) << "Admins:"
+                 << "\033[33m" << adminCount << "\033[0m" << endl;
+            cout << left << setw(25) << "Regular Users:"
+                 << "\033[33m" << userCount << "\033[0m" << endl;
+
+            cout << "\n\033[36mDatabase file: komik_database.db\033[0m" << endl;
+
+            pause();
+            break;
+        }
+
+        case 7:
+        {
+            printHeader("RUN CUSTOM SQL QUERY");
+
+            cout << "\033[33mWarning: Advanced feature!\033[0m\n";
+            cout << "Only SELECT queries are safe.\n";
+            cout << "Example: SELECT * FROM komiks WHERE genre LIKE '%Action%'\n\n";
+
+            string query;
+            cout << "Enter SQL query: ";
+            getline(cin, query);
+
+            // Simple validation (hanya allow SELECT)
+            string queryLower = query;
+            transform(queryLower.begin(), queryLower.end(), queryLower.begin(), ::tolower);
+
+            if (queryLower.find("select") != 0)
+            {
+                cout << "\033[31mError: Only SELECT queries are allowed!\033[0m" << endl;
+                pause();
+                break;
+            }
+
+            // Execute query (perlu tambah function di Database.cpp)
+            cout << "\n\033[33mNote: Custom query execution not yet implemented.\033[0m" << endl;
+            cout << "Use DB Browser for SQLite or sqlite3 CLI for custom queries." << endl;
+
+            pause();
+            break;
+        }
+
+        case 0:
+            break;
+
+        default:
+            cout << "\033[31mInvalid choice!\033[0m" << endl;
+            pause();
+        }
+    } while (choice != 0);
+}
 
 // ===== MAIN FUNCTION =====
 int main()
@@ -43,30 +322,47 @@ int main()
     cout << "\033[1;36m";
     cout << "==============================================\n";
     cout << "   KOMIK MANAGEMENT SYSTEM\n";
-    cout << "   with Authentication & Role-Based Access\n";
+    cout << "   with SQLite Database Integration\n";
     cout << "==============================================\033[0m\n"
          << endl;
 
     cout << "Initializing system...\n"
          << endl;
 
-    KomikManager manager;
-    BST tree;
-    Auth auth;
+    // Connect to database
+    cout << "Connecting to database...\n";
+    if (!dbConnection.open("komik_database.db"))
+    {
+        cout << "\033[31mFailed to connect to database!\033[0m\n";
+        return 1;
+    }
 
-    cout << "\033[32mSystem initialized!\033[0m\n"
+    // Initialize managers
+    KomikManager manager(&dbConnection);
+    BST tree;
+    Auth auth(&dbConnection);
+
+    // Load data from database
+    cout << "Loading data from database...\n";
+    manager.loadDataFromDB(tree);
+
+    cout << "\033[32mSystem initialized successfully!\033[0m\n"
          << endl;
     pause();
 
+    // Start menu system
     MenuSystem menuSystem(tree, manager, auth);
     menuSystem.showMainMenu();
 
-    cout << "\n\033[36mThank you for using Komik Management System!\033[0m" << endl;
+    // Close database connection
+    dbConnection.close();
 
+    cout << "\n\033[36mThank you for using Komik Management System!\033[0m" << endl;
     return 0;
 }
 
 // ===== HELPER FUNCTIONS =====
+
 void clearScreen()
 {
 #ifdef _WIN32
@@ -95,7 +391,6 @@ void printHeader(const string &title)
 
 // ===== MULTIPLE GENRE HELPER FUNCTIONS =====
 
-// Parse input "1 3 5" menjadi vector {1, 3, 5}
 vector<int> parseGenreChoices(const string &input)
 {
     vector<int> choices;
@@ -110,7 +405,6 @@ vector<int> parseGenreChoices(const string &input)
     return choices;
 }
 
-// Get multiple genres dengan validasi
 string getMultipleGenres(KomikManager &manager, bool allowEmpty)
 {
     vector<string> allGenres = manager.getAllGenres();
@@ -199,7 +493,6 @@ string getMultipleGenres(KomikManager &manager, bool allowEmpty)
     }
 
     cout << "\n\033[32mSelected genres: " << genreString << "\033[0m" << endl;
-
     return genreString;
 }
 
@@ -232,7 +525,6 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
 
         switch (choice)
         {
-        // ===== CASE 1: ADD KOMIK - MULTIPLE GENRES =====
         case 1:
         {
             printHeader("ADD COMIC");
@@ -244,26 +536,29 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
             cout << "Enter author: ";
             getline(cin, author);
 
-            // Multiple genres (harus pilih)
             genre = getMultipleGenres(manager, false);
 
             int newId = manager.getNextId();
             Komik *newKomik = new Komik(newId, title, author, genre);
             tree.insert(newKomik);
 
-            cout << "\n\033[32m==============================================\033[0m" << endl;
-            cout << "\033[32mKomik added successfully!\033[0m" << endl;
-            cout << "ID: " << newId << endl;
-            cout << "Title: " << title << endl;
-            cout << "Author: " << author << endl;
-            cout << "Genre(s): " << genre << endl;
-            cout << "\033[32m==============================================\033[0m" << endl;
+            if (dbConnection.insertKomik(newKomik))
+            {
+                cout << "\n\033[32mKomik added successfully!\033[0m" << endl;
+                cout << "ID: " << newId << endl;
+                cout << "Title: " << title << endl;
+                cout << "Author: " << author << endl;
+                cout << "Genre(s): " << genre << endl;
+            }
+            else
+            {
+                cout << "\033[31mFailed to save to database!\033[0m" << endl;
+            }
 
             pause();
             break;
         }
 
-        // ===== CASE 2: VIEW ALL =====
         case 2:
         {
             printHeader("ALL COMICS (IN-ORDER TRAVERSAL)");
@@ -293,48 +588,66 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
             break;
         }
 
-        // ===== CASE 3: SEARCH =====
         case 3:
         {
             printHeader("SEARCH COMIC");
 
+            int searchType;
+            cout << "Search Criteria:\n";
+            cout << "1. By Title\n";
+            cout << "2. By Author\n";
+            cout << "3. By Genre (Multiple)\n";
+            cout << "0. Cancel\n";
+            cout << "\nChoice: ";
+            cin >> searchType;
+            cin.ignore();
+
+            if (searchType == 0)
+                break;
+
             string keyword;
-            cout << "Enter keyword to search: ";
-            getline(cin, keyword);
+            vector<Komik *> results;
+            SearchFilter filter;
 
-            vector<Komik *> results = tree.searchPartial(keyword);
-
-            if (results.empty())
+            if (searchType == 3)
             {
-                cout << "\033[31m\nNo comics found with keyword: '" << keyword << "'\033[0m" << endl;
+                keyword = getMultipleGenres(manager, false);
+
+                if (keyword.empty())
+                {
+                    cout << "\033[31mNo genre selected!\033[0m" << endl;
+                    pause();
+                    break;
+                }
+
+                results = filter.searchByGenre(tree, keyword);
+                filter.displayResults(results, "Search Results by Genre(s): " + keyword);
             }
             else
             {
-                cout << "\033[32m\nFound " << results.size() << " comic(s):\033[0m\n"
-                     << endl;
+                cout << "Enter keyword: ";
+                getline(cin, keyword);
 
-                cout << left << setw(5) << "ID"
-                     << setw(30) << "Title"
-                     << setw(25) << "Author"
-                     << setw(20) << "Genre(s)" << endl;
-                cout << string(80, '-') << endl;
-
-                for (Komik *comic : results)
+                if (searchType == 1)
                 {
-                    cout << left << setw(5) << comic->id
-                         << setw(30) << comic->title
-                         << setw(25) << comic->author
-                         << setw(20) << comic->genre << endl;
+                    results = filter.searchByTitle(tree, keyword);
+                    filter.displayResults(results, "Search Results by Title: '" + keyword + "'");
                 }
-
-                cout << "\n\033[32mTotal: " << results.size() << " comic(s)\033[0m" << endl;
+                else if (searchType == 2)
+                {
+                    results = filter.searchByAuthor(tree, keyword);
+                    filter.displayResults(results, "Search Results by Author: '" + keyword + "'");
+                }
+                else
+                {
+                    cout << "\033[31mInvalid option!\033[0m" << endl;
+                }
             }
 
             pause();
             break;
         }
 
-        // ===== CASE 4: UPDATE - MULTIPLE GENRES =====
         case 4:
         {
             printHeader("UPDATE COMIC");
@@ -363,8 +676,6 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
             getline(cin, newAuthor);
 
             cout << "\n\033[36mCurrent genre(s): " << found->genre << "\033[0m";
-
-            // Multiple genres (boleh kosong = pakai lama)
             newGenre = getMultipleGenres(manager, true);
 
             if (newGenre.empty())
@@ -376,12 +687,19 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
             Komik *updatedKomik = new Komik(found->id, newTitle, newAuthor, newGenre);
             tree.update(oldTitle, updatedKomik);
 
-            cout << "\n\033[32mKomik updated successfully!\033[0m" << endl;
+            if (dbConnection.updateKomik(found->id, updatedKomik))
+            {
+                cout << "\n\033[32mKomik updated successfully!\033[0m" << endl;
+            }
+            else
+            {
+                cout << "\033[31mFailed to update in database!\033[0m" << endl;
+            }
+
             pause();
             break;
         }
 
-        // ===== CASE 5: DELETE =====
         case 5:
         {
             printHeader("DELETE COMIC");
@@ -407,8 +725,17 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
 
             if (confirm == 'y' || confirm == 'Y')
             {
+                int idToDelete = found->id;
                 tree.remove(title);
-                cout << "\033[32mKomik deleted successfully!\033[0m" << endl;
+
+                if (dbConnection.deleteKomik(idToDelete))
+                {
+                    cout << "\033[32mKomik deleted successfully!\033[0m" << endl;
+                }
+                else
+                {
+                    cout << "\033[31mFailed to delete from database!\033[0m" << endl;
+                }
             }
             else
             {
@@ -678,43 +1005,52 @@ void traversalMenu(BST &tree)
 // ===== VIEW FAVORITES MENU =====
 void viewFavoritesMenu(KomikManager &manager, BST &tree)
 {
-    printHeader("USER FAVORITES");
+    printHeader("ALL USER FAVORITES");
 
-    auto allFavorites = manager.getAllFavorites();
+    // Get all users from database
+    vector<User> allUsers = dbConnection.getAllUsers();
 
-    if (allFavorites.empty())
+    if (allUsers.empty())
     {
-        cout << "\033[33mNo favorites found!\033[0m" << endl;
+        cout << "\033[33mNo users found!\033[0m" << endl;
     }
     else
     {
+        bool hasAnyFavorites = false;
+
         cout << left << setw(15) << "Username"
              << setw(10) << "Komik ID"
              << setw(30) << "Komik Title" << endl;
         cout << string(55, '-') << endl;
 
-        for (const auto &userFav : allFavorites)
+        for (const User &user : allUsers)
         {
-            string username = userFav.first;
-            vector<int> comicIds = userFav.second;
+            vector<int> favorites = manager.getFavoritesByUser(user.username);
 
-            for (int comicId : comicIds)
+            if (!favorites.empty())
             {
-                string comicTitle = "Unknown";
+                hasAnyFavorites = true;
+                for (int comicId : favorites)
+                {
+                    string comicTitle = "Unknown";
 
-                tree.inOrder([&comicTitle, comicId](Komik *comic)
-                             {
-                    if (comic->id == comicId) {
-                        comicTitle = comic->title;
-                    } });
+                    tree.inOrder([&comicTitle, comicId](Komik *comic)
+                                 {
+                        if (comic->id == comicId) {
+                            comicTitle = comic->title;
+                        } });
 
-                cout << left << setw(15) << username
-                     << setw(10) << comicId
-                     << setw(30) << comicTitle << endl;
+                    cout << left << setw(15) << user.username
+                         << setw(10) << comicId
+                         << setw(30) << comicTitle << endl;
+                }
             }
         }
 
-        cout << "\nTotal users with favorites: " << allFavorites.size() << endl;
+        if (!hasAnyFavorites)
+        {
+            cout << "\033[33mNo favorites found!\033[0m" << endl;
+        }
     }
 
     pause();

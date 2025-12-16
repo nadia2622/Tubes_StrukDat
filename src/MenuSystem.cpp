@@ -1,7 +1,9 @@
 #include "../include/MenuSystem.h"
+#include "../include/SearchFilter.h"
 #include <iostream>
 #include <iomanip>
 #include <limits>
+#include <sstream>
 
 using namespace std;
 
@@ -21,6 +23,50 @@ MenuSystem::MenuSystem(BST &tree, KomikManager &manager, Auth &auth)
 
 // ===== DESTRUCTOR =====
 MenuSystem::~MenuSystem() {}
+
+string selectMultipleGenres(KomikManager &manager)
+{
+    vector<string> allGenres = manager.getAllGenres();
+
+    // Tampilkan daftar genre
+    cout << "\n\033[1;36mAvailable genres:\033[0m\n";
+    for (size_t i = 0; i < allGenres.size(); i++)
+    {
+        cout << (i + 1) << ". " << allGenres[i] << endl;
+    }
+
+    string input;
+    vector<int> choices;
+
+    cout << "\nSelect genres to filter (e.g., '1 3'): ";
+    getline(cin, input);
+
+    // Parsing input "1 3" jadi angka
+    stringstream ss(input);
+    int num;
+    while (ss >> num)
+    {
+        if (num >= 1 && num <= (int)allGenres.size())
+        {
+            choices.push_back(num);
+        }
+    }
+
+    if (choices.empty())
+        return "";
+
+    // Gabungkan jadi string "Action, Comedy"
+    string result = "";
+    for (size_t i = 0; i < choices.size(); i++)
+    {
+        result += allGenres[choices[i] - 1];
+        if (i < choices.size() - 1)
+            result += ", ";
+    }
+
+    cout << "\033[32mSelected: " << result << "\033[0m" << endl;
+    return result;
+}
 
 // ===== MAIN MENU =====
 void MenuSystem::showMainMenu()
@@ -246,6 +292,7 @@ void MenuSystem::showAdminMenu()
 void MenuSystem::showUserMenu()
 {
     int choice;
+    SearchFilter filter;
 
     do
     {
@@ -256,7 +303,7 @@ void MenuSystem::showUserMenu()
 
         cout << "User Panel\n\n";
         cout << "1. Browse All Comics\n";
-        cout << "2. Search Comic\n";
+        cout << "2. Search & Filter Comics\n";
         cout << "3. My Favorites\n";
         cout << "0. Logout\n";
         cout << "\nChoice: ";
@@ -276,26 +323,62 @@ void MenuSystem::showUserMenu()
             viewComicsMenu();
             break;
         case 2:
-            printHeader("SEARCH COMIC");
-            {
-                string title;
-                cout << "Enter title to search: ";
-                cin.ignore();
-                getline(cin, title);
+        {
+            // ===== SEARCH & FILTER MENU =====
+            int searchChoice;
+            printHeader("SEARCH & FILTER");
+            cout << "1. Search by Title\n";
+            cout << "2. Search by Author\n";
+            cout << "3. Filter by Genre (Multiple)\n"; // Update Text
+            cout << "0. Back\n";
+            cout << "\nChoice: ";
+            cin >> searchChoice;
+            cin.ignore();
 
-                Komik *found = tree.search(title);
-                if (found != nullptr)
+            if (searchChoice == 0)
+                break;
+
+            vector<Komik *> results;
+            string keyword;
+
+            // Logic khusus untuk Genre (pakai menu pilihan angka)
+            if (searchChoice == 3)
+            {
+                keyword = selectMultipleGenres(manager); // Panggil helper baru
+                if (keyword.empty())
                 {
-                    cout << "\033[32m\nComic found!\033[0m\n";
-                    found->display();
+                    cout << "\033[31mNo genre selected!\033[0m" << endl;
+                    pause();
+                    break;
+                }
+                results = filter.searchByGenre(tree, keyword);
+                filter.displayResults(results, "Comics with genre(s): " + keyword);
+            }
+            // Logic untuk Title & Author (input manual)
+            else
+            {
+                cout << "Enter keyword: ";
+                getline(cin, keyword);
+
+                if (searchChoice == 1)
+                {
+                    results = filter.searchByTitle(tree, keyword);
+                    filter.displayResults(results, "Search Title: " + keyword);
+                }
+                else if (searchChoice == 2)
+                {
+                    results = filter.searchByAuthor(tree, keyword);
+                    filter.displayResults(results, "Search Author: " + keyword);
                 }
                 else
                 {
-                    cout << "\033[31mComic not found!\033[0m" << endl;
+                    cout << "\033[31mInvalid option!\033[0m" << endl;
                 }
             }
+
             pause();
             break;
+        }
         case 3:
             myFavoritesMenu();
             break;

@@ -53,7 +53,7 @@ KomikManagementSystem/
 cd KomikManagementSystem
 
 # Compile
-g++ -o komik_system main.cpp src/BST.cpp src/KomikManager.cpp -I include -std=c++11
+g++ -std=c++11 -g main.cpp -o output/main.exe -lsqlite3
 
 # Run
 komik_system.exe

@@ -34,6 +34,7 @@ private:
     map<string, User> users;
     int nextUserId;
     User *currentUser;
+    Database *db;
 
     string hashPassword(const string &password);
     bool verifyPassword(const string &inputPassword, const string &storedPassword);
@@ -41,7 +42,7 @@ private:
     string getPasswordInput(const string &prompt);
 
 public:
-    Auth();
+    Auth(Database *database);
     ~Auth();
 
     bool registerUser(const string &username, const string &password, const string &role = "user");
@@ -63,6 +64,7 @@ public:
     int getUserCount() const;
     void displayCurrentUser() const;
     void displayAllUsers() const;
+    void loadUsersFromDB();
 };
 
 #endif

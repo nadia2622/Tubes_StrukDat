@@ -1,13 +1,13 @@
 /*
  * Auth.cpp
- * Implementasi Authentication System
- * UPDATED: Added password masking functionality
+ * Implementasi Authentication System dengan SQLite Database
  */
 
 #include "../include/Auth.h"
+#include "../include/Database.h"
 #include <iostream>
 #include <algorithm>
-#include <iomanip> // TAMBAH INI untuk setw
+#include <iomanip>
 
 // ===== PLATFORM-SPECIFIC INCLUDES =====
 #ifdef _WIN32
@@ -20,11 +20,36 @@
 using namespace std;
 
 // ===== CONSTRUCTOR =====
-Auth::Auth()
+Auth::Auth(Database *database) : currentUser(nullptr), db(database)
 {
-    nextUserId = 1;
-    currentUser = nullptr;
-    loadDefaultUsers();
+    loadUsersFromDB();
+
+    // Load default admin if no users exist
+    if (users.empty() && db)
+    {
+        loadDefaultUsers();
+    }
+}
+
+void Auth::loadUsersFromDB()
+{
+    if (db)
+    {
+        vector<User> dbUsers = db->getAllUsers();
+        for (const User &user : dbUsers)
+        {
+            users[user.username] = user;
+        }
+
+        // Set nextUserId
+        nextUserId = db->getLastUserId() + 1;
+
+        cout << "Loaded " << users.size() << " users from database." << endl;
+    }
+    else
+    {
+        nextUserId = 1;
+    }
 }
 
 // ===== DESTRUCTOR =====
@@ -167,7 +192,18 @@ bool Auth::registerUser(const string &username, const string &password, const st
 
     string hashedPassword = hashPassword(password);
     User newUser(nextUserId++, username, hashedPassword, role);
+
+    // Save to memory
     users[username] = newUser;
+
+    // Save to database
+    if (db && !db->insertUser(newUser))
+    {
+        cerr << "Failed to save user to database!" << endl;
+        users.erase(username);
+        nextUserId--;
+        return false;
+    }
 
     cout << "User '" << username << "' registered successfully!" << endl;
     return true;
@@ -330,6 +366,14 @@ bool Auth::deleteUser(const string &username)
         return false;
     }
 
+    // Delete from database first
+    if (db && !db->deleteUser(username))
+    {
+        cerr << "Failed to delete user from database!" << endl;
+        return false;
+    }
+
+    // Delete from memory
     users.erase(username);
     cout << "User '" << username << "' deleted successfully!" << endl;
     return true;
@@ -356,7 +400,16 @@ bool Auth::updateUserRole(const string &username, const string &newRole)
         return false;
     }
 
+    // Update in memory
     users[username].role = newRole;
+
+    // Update in database
+    if (db && !db->updateUser(users[username]))
+    {
+        cerr << "Failed to update user in database!" << endl;
+        return false;
+    }
+
     cout << "Role of '" << username << "' changed to '" << newRole << "'" << endl;
     return true;
 }
@@ -390,7 +443,7 @@ void Auth::displayCurrentUser() const
     cout << "Role: " << currentUser->role << endl;
 }
 
-// ===== DISPLAY ALL USERS (FIXED!) =====
+// ===== DISPLAY ALL USERS =====
 void Auth::displayAllUsers() const
 {
     cout << "\n=== ALL REGISTERED USERS ===\n";
@@ -399,7 +452,6 @@ void Auth::displayAllUsers() const
          << setw(10) << "Role" << endl;
     cout << string(35, '-') << endl;
 
-    // FIXED: Loop dengan pair, bukan pointer!
     for (const auto &pair : users)
     {
         const User &user = pair.second;
