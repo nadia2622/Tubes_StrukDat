@@ -49,6 +49,9 @@ KomikManagementSystem/
 ### Method 2: Manual Compile
 
 ```cmd
+#Buka Terminal
+Search Windows MSYS2 UCRT64
+
 # Navigate ke folder project
 cd KomikManagementSystem
 
