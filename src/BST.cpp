@@ -1,5 +1,7 @@
 #include "../include/BST.h"
 #include <iostream>
+#include <vector>
+#include <functional>
 
 BST::BST()
 {
@@ -81,40 +83,65 @@ Komik *BST::insertHelper(Komik *node, Komik *newKomik)
 
 Komik *BST::search(const string &title) const
 {
-    // const string& title = referensi ke string (tidak copy, hemat memori)
-    // const di akhir = fungsi ini tidak mengubah data tree
-
     return searchHelper(root, title);
-    // Panggil searchHelper mulai dari root
 }
 
-// ===== SEARCH HELPER (rekursif) =====
 Komik *BST::searchHelper(Komik *node, const string &title) const
 {
-    // BASE CASE 1: node kosong, komik tidak ditemukan
     if (node == nullptr)
-    {
-        return nullptr; // Return null = tidak ketemu
-    }
+        return nullptr;
 
-    // BASE CASE 2: ketemu! title sama dengan node->title
     if (node->title == title)
-    {
-        return node; // Return pointer ke komik yang ditemukan
-    }
-
-    // RECURSIVE CASE: cari di subtree yang sesuai
+        return node;
 
     if (title < node->title)
     {
-        // Jika title lebih kecil, cari di LEFT
         return searchHelper(node->left, title);
     }
     else
     {
-        // Jika title lebih besar, cari di RIGHT
         return searchHelper(node->right, title);
     }
+}
+
+// ===== NEW: TO LOWERCASE HELPER =====
+string BST::toLowerCase(const string &str) const
+{
+    string result = str;
+    for (char &c : result)
+    {
+        c = tolower(c);
+    }
+    return result;
+}
+
+// ===== NEW: SEARCH PARTIAL (case-insensitive & partial match) =====
+vector<Komik *> BST::searchPartial(const string &keyword) const
+{
+    vector<Komik *> results;
+    searchPartialHelper(root, keyword, results);
+    return results;
+}
+
+// ===== NEW: SEARCH PARTIAL HELPER =====
+void BST::searchPartialHelper(Komik *node, const string &keyword, vector<Komik *> &results) const
+{
+    if (node == nullptr)
+        return;
+
+    // Convert title dan keyword ke lowercase untuk perbandingan
+    string lowerTitle = toLowerCase(node->title);
+    string lowerKeyword = toLowerCase(keyword);
+
+    // Cek apakah keyword ada di dalam title (partial match)
+    if (lowerTitle.find(lowerKeyword) != string::npos)
+    {
+        results.push_back(node);
+    }
+
+    // Tetap search di left dan right (traverse semua node)
+    searchPartialHelper(node->left, keyword, results);
+    searchPartialHelper(node->right, keyword, results);
 }
 
 // ===== REMOVE (public interface) =====
@@ -301,7 +328,6 @@ void BST::inOrderHelper(Komik *node, function<void(Komik *)> callback) const
     inOrderHelper(node->left, callback);
     callback(node);
     inOrderHelper(node->right, callback);
-
 }
 
 // ===== TRAVERSAL: POST-ORDER =====
@@ -365,9 +391,7 @@ vector<Komik *> BST::getAllKomiks() const
     vector<Komik *> comics;
 
     inOrder([&comics](Komik *comic)
-            {
-                comics.push_back(comic);
-            });
+            { comics.push_back(comic); });
 
     return comics; // Return vector berisi semua komik
 }

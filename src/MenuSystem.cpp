@@ -1,21 +1,11 @@
-/*
- * MenuSystem.cpp - COMPLETE VERSION (FIXED)
- * * PENTING: File ini HANYA include header (.h), TIDAK include .cpp!
- */
-
 #include "../include/MenuSystem.h"
 #include <iostream>
 #include <iomanip>
 #include <limits>
 
-// Pastikan SearchFilter.h ter-include secara tidak langsung via MenuSystem.h
-// atau kita asumsikan class SearchFilter sudah dikenali.
-// Jika masih error tipe data, pastikan include header SearchFilter ada di MenuSystem.h
-
 using namespace std;
 
 // ===== EXTERNAL FUNCTION DECLARATIONS =====
-// Fungsi-fungsi ini ada di main.cpp
 extern void clearScreen();
 extern void pause();
 extern void printHeader(const string &title);
@@ -24,18 +14,13 @@ extern void crudGenreMenu(KomikManager &manager, BST &tree);
 extern void crudAuthorMenu(KomikManager &manager, BST &tree);
 extern void traversalMenu(BST &tree);
 extern void viewFavoritesMenu(KomikManager &manager, BST &tree);
-extern void searchFilterMenu(BST &tree, SearchFilter &searcher);
 
 // ===== CONSTRUCTOR =====
 MenuSystem::MenuSystem(BST &tree, KomikManager &manager, Auth &auth)
-    : tree(tree), manager(manager), auth(auth)
-{
-}
+    : tree(tree), manager(manager), auth(auth) {}
 
 // ===== DESTRUCTOR =====
-MenuSystem::~MenuSystem()
-{
-}
+MenuSystem::~MenuSystem() {}
 
 // ===== MAIN MENU =====
 void MenuSystem::showMainMenu()
@@ -102,13 +87,13 @@ void MenuSystem::showMainMenu()
             cout << "Features:\n";
             cout << "- Binary Search Tree implementation\n";
             cout << "- CRUD operations\n";
-            cout << "- Search & Filter (DFS)\n";
+            cout << "- Search & Filter\n";
             cout << "- Authentication & Authorization\n";
-            cout << "- Role-based access control\n\n";
+            cout << "- Role-based access control\n";
+            cout << "- Multiple genre support\n\n";
 
             cout << "Default Accounts:\n";
             cout << "- Admin: username=admin, password=admin123\n";
-            cout << "- User1: username=user1, password=user123\n";
 
             pause();
             break;
@@ -159,7 +144,7 @@ bool MenuSystem::handleRegister()
 
     cout << "Enter username (min 3 characters): ";
     cin >> username;
-    cin.ignore(); // Clear newline buffer
+    cin.ignore();
 
     bool success = auth.registerWithMaskedPassword(username, "user");
 
@@ -181,7 +166,6 @@ bool MenuSystem::handleRegister()
 void MenuSystem::showAdminMenu()
 {
     int choice;
-    SearchFilter searcher; // FIX: Instansiasi objek searcher lokal untuk digunakan di menu ini
 
     do
     {
@@ -194,12 +178,11 @@ void MenuSystem::showAdminMenu()
         cout << "1. CRUD Comic\n";
         cout << "2. CRUD Genre\n";
         cout << "3. CRUD Author\n";
-        cout << "4. Search & Filter Comics\n";
-        cout << "5. Tree Traversal\n";
+        cout << "4. Tree Traversal\n";
+        cout << "5. View All Favorites\n";
         cout << "6. User Management\n";
-        cout << "7. View All Favorites\n";
-        cout << "8. Reload Sample Data\n";
-        cout << "9. System Statistics\n";
+        cout << "7. Reload Sample Data\n";
+        cout << "8. System Statistics\n";
         cout << "0. Logout\n";
         cout << "\nChoice: ";
 
@@ -224,28 +207,27 @@ void MenuSystem::showAdminMenu()
             crudAuthorMenu(manager, tree);
             break;
         case 4:
-            searchFilterMenu(tree, searcher); // searcher sekarang sudah dideklarasikan di atas
+            traversalMenu(tree);
             break;
         case 5:
-            traversalMenu(tree);
+            viewFavoritesMenu(manager, tree);
             break;
         case 6:
             userManagementMenu();
             break;
         case 7:
-            viewFavoritesMenu(manager, tree);
-            break;
-        case 8:
             printHeader("RELOAD SAMPLE DATA");
             manager.loadSampleData(tree);
             cout << "\033[32mSample data reloaded!\033[0m" << endl;
             pause();
             break;
-        case 9:
+        case 8:
             printHeader("SYSTEM STATISTICS");
             cout << "\033[1;36mStatistics:\033[0m\n\n";
             cout << "Total Comics: " << tree.count() << endl;
             cout << "Total Users: " << auth.getUserCount() << endl;
+            cout << "Total Genres: " << manager.getAllGenres().size() << endl;
+            cout << "Total Authors: " << manager.getAllAuthors().size() << endl;
             pause();
             break;
         case 0:
@@ -264,7 +246,6 @@ void MenuSystem::showAdminMenu()
 void MenuSystem::showUserMenu()
 {
     int choice;
-    SearchFilter searcher; // FIX: Instansiasi objek searcher lokal
 
     do
     {
@@ -276,8 +257,7 @@ void MenuSystem::showUserMenu()
         cout << "User Panel\n\n";
         cout << "1. Browse All Comics\n";
         cout << "2. Search Comic\n";
-        cout << "3. Filter Comics\n";
-        cout << "4. My Favorites\n";
+        cout << "3. My Favorites\n";
         cout << "0. Logout\n";
         cout << "\nChoice: ";
 
@@ -296,12 +276,27 @@ void MenuSystem::showUserMenu()
             viewComicsMenu();
             break;
         case 2:
-            searchFilterMenu(tree, searcher); // searcher aman digunakan
+            printHeader("SEARCH COMIC");
+            {
+                string title;
+                cout << "Enter title to search: ";
+                cin.ignore();
+                getline(cin, title);
+
+                Komik *found = tree.search(title);
+                if (found != nullptr)
+                {
+                    cout << "\033[32m\nComic found!\033[0m\n";
+                    found->display();
+                }
+                else
+                {
+                    cout << "\033[31mComic not found!\033[0m" << endl;
+                }
+            }
+            pause();
             break;
         case 3:
-            searchFilterMenu(tree, searcher); // searcher aman digunakan
-            break;
-        case 4:
             myFavoritesMenu();
             break;
         case 0:
@@ -347,12 +342,16 @@ void MenuSystem::userManagementMenu()
             }
             else
             {
-                cout << left << setw(5) << "ID" << setw(20) << "Username" << setw(10) << "Role" << endl;
+                cout << left << setw(5) << "ID"
+                     << setw(20) << "Username"
+                     << setw(10) << "Role" << endl;
                 cout << string(35, '-') << endl;
 
                 for (const auto &user : allUsers)
                 {
-                    cout << left << setw(5) << user.id << setw(20) << user.username << setw(10) << user.role << endl;
+                    cout << left << setw(5) << user.id
+                         << setw(20) << user.username
+                         << setw(10) << user.role << endl;
                 }
             }
             pause();
@@ -399,11 +398,17 @@ void MenuSystem::viewComicsMenu()
     }
     else
     {
-        cout << left << setw(5) << "ID" << setw(30) << "Title" << setw(25) << "Author" << setw(15) << "Genre" << endl;
-        cout << string(75, '-') << endl;
+        cout << left << setw(5) << "ID"
+             << setw(30) << "Title"
+             << setw(25) << "Author"
+             << setw(20) << "Genre(s)" << endl;
+        cout << string(80, '-') << endl;
 
         tree.inOrder([](Komik *comic)
-                     { cout << left << setw(5) << comic->id << setw(30) << comic->title << setw(25) << comic->author << setw(15) << comic->genre << endl; });
+                     { cout << left << setw(5) << comic->id
+                            << setw(30) << comic->title
+                            << setw(25) << comic->author
+                            << setw(20) << comic->genre << endl; });
     }
 
     pause();

@@ -36,9 +36,7 @@ struct Komik
         right = nullptr;
     }
 
-    ~Komik()
-    {
-    }
+    ~Komik() {}
 
     void display() const
     {
@@ -51,28 +49,18 @@ struct Komik
     bool operator<(const Komik &other) const
     {
         if (title != other.title)
-        {
             return title < other.title;
-        }
-
         if (author != other.author)
-        {
             return author < other.author;
-        }
-
         return genre < other.genre;
     }
 
     bool operator>(const Komik &other) const
     {
         if (title != other.title)
-        {
             return title > other.title;
-        }
         if (author != other.author)
-        {
             return author > other.author;
-        }
         return genre > other.genre;
     }
 
@@ -84,4 +72,4 @@ struct Komik
     }
 };
 
-#endif // KOMIK_H
+#endif
