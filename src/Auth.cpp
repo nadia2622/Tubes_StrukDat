@@ -48,7 +48,6 @@ bool Auth::usernameExists(const string& username) {
     return users.find(username) != users.end();
 }
 
-// ===== NEW: GET PASSWORD INPUT WITH MASKING =====
 string Auth::getPasswordInput(const string& prompt) {
     string password = "";
     char ch;
@@ -57,7 +56,6 @@ string Auth::getPasswordInput(const string& prompt) {
     cout.flush();
     
     #ifdef _WIN32
-        // ===== WINDOWS IMPLEMENTATION =====
         while (true) {
             ch = _getch();
             
@@ -79,7 +77,6 @@ string Auth::getPasswordInput(const string& prompt) {
             }
         }
     #else
-        // ===== LINUX/MAC IMPLEMENTATION =====
         termios oldt, newt;
         tcgetattr(STDIN_FILENO, &oldt);
         newt = oldt;
@@ -146,7 +143,6 @@ bool Auth::registerUser(const string& username, const string& password, const st
         return false;
     }
     
-    // ===== BUAT USER BARU =====
     string hashedPassword = hashPassword(password);
     User newUser(nextUserId++, username, hashedPassword, role);
     users[username] = newUser;
@@ -155,9 +151,7 @@ bool Auth::registerUser(const string& username, const string& password, const st
     return true;
 }
 
-// ===== NEW: REGISTER WITH MASKED PASSWORD =====
 bool Auth::registerWithMaskedPassword(const string& username, const string& role) {
-    // ===== VALIDASI USERNAME =====
     if (username.empty()) {
         cerr << "Username cannot be empty!" << endl;
         return false;
@@ -173,16 +167,13 @@ bool Auth::registerWithMaskedPassword(const string& username, const string& role
         return false;
     }
     
-    // ===== INPUT PASSWORD DENGAN MASKING =====
     string password = getPasswordInput("Enter password: ");
     
-    // Validasi password length
     if (password.length() < 6) {
         cerr << "Password must be at least 6 characters!" << endl;
         return false;
     }
     
-    // ===== KONFIRMASI PASSWORD =====
     string confirmPassword = getPasswordInput("Confirm password: ");
     
     if (password != confirmPassword) {
@@ -190,13 +181,11 @@ bool Auth::registerWithMaskedPassword(const string& username, const string& role
         return false;
     }
     
-    // ===== REGISTER USER =====
     return registerUser(username, password, role);
 }
 
 // ===== LOGIN =====
 bool Auth::login(const string& username, const string& password) {
-    // ===== VALIDASI INPUT =====
     if (username.empty() || password.empty()) {
         cerr << "Username and password cannot be empty!" << endl;
         return false;
@@ -335,13 +324,9 @@ bool Auth::updateUserRole(const string& username, const string& newRole) {
 // ===== LOAD DEFAULT USERS =====
 void Auth::loadDefaultUsers() {
     registerUser("admin", "admin123", "admin");
-    registerUser("user1", "user123", "user");
-    registerUser("user2", "user123", "user");
     
     cout << "Default users loaded:" << endl;
     cout << "- Admin: username=admin, password=admin123" << endl;
-    cout << "- User1: username=user1, password=user123" << endl;
-    cout << "- User2: username=user2, password=user123" << endl;
 }
 
 // ===== GET USER COUNT =====

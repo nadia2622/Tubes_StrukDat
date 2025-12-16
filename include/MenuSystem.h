@@ -1,13 +1,3 @@
-/*
- * MenuSystem.h
- * Menu System dengan Role-Based Access (Bagian Ryvanda)
- * 
- * Fitur:
- * 1. Menu berbeda untuk Admin & User
- * 2. Admin: Full access
- * 3. User: Limited access (view, search, favorites)
- */
-
 #ifndef MENU_SYSTEM_H
 #define MENU_SYSTEM_H
 
@@ -18,12 +8,8 @@
 #include <string>
 
 using namespace std;
-
-// ===== CLASS MenuSystem =====
-// Class untuk mengelola menu berdasarkan role
 class MenuSystem {
 private:
-    // ===== REFERENCES KE OBJEK UTAMA =====
     BST& tree;                    // Reference ke BST
     KomikManager& manager;        // Reference ke KomikManager
     // SearchFilter& searcher;       // Reference ke SearchFilter
@@ -82,43 +68,3 @@ public:
 };
 
 #endif // MENU_SYSTEM_H
-
-/*
- * ===== PENJELASAN KONSEP =====
- * 
- * 1. ROLE-BASED MENU:
- *    - Admin: Full access ke semua fitur
- *    - User: Limited access (read-only untuk komik, manage favorites)
- * 
- * 2. MENU HIERARCHY:
- *    Main Menu (sebelum login)
- *    ├── Login → Admin Menu / User Menu
- *    ├── Register → kembali ke Main Menu
- *    └── Exit
- * 
- *    Admin Menu:
- *    ├── CRUD Comic (full access)
- *    ├── CRUD Genre (full access)
- *    ├── CRUD Author (full access)
- *    ├── User Management (view, delete, change role)
- *    ├── Search & Filter
- *    ├── View All Favorites
- *    └── Logout
- * 
- *    User Menu:
- *    ├── View All Comics (read-only)
- *    ├── Search Comic
- *    ├── Filter Comics
- *    ├── My Favorites (add/remove)
- *    └── Logout
- * 
- * 3. REFERENCE MEMBERS:
- *    - Pakai reference (&) bukan pointer (*)
- *    - Kenapa? Karena objek pasti ada (tidak bisa null)
- *    - Reference tidak perlu -> untuk akses member
- * 
- * 4. SEPARATION OF CONCERNS:
- *    - Auth: Handle authentication & session
- *    - MenuSystem: Handle menu flow & user interaction
- *    - BST, Manager, Searcher: Handle business logic
- */

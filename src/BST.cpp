@@ -1,39 +1,21 @@
-/*
- * BST.cpp
- * File IMPLEMENTASI Binary Search Tree
- *
- * Di file ini kita tulis DETAIL dari semua fungsi yang sudah dideklarasikan di BST.h
- */
+#include "../include/BST.h"
+#include <iostream>
 
-#include "../include/BST.h" // Include BST.h untuk akses deklarasi class BST
-#include <iostream>         // Include iostream untuk pakai cout
-
-// ===== CONSTRUCTOR =====
-// Dipanggil saat: BST tree;
 BST::BST()
 {
-    // BST::BST() artinya: fungsi BST() milik class BST
-    // : root(nullptr) = initialization list, set root = nullptr
-    root = nullptr; // Set root kosong (tree masih kosong)
+    root = nullptr;
 }
 
-// ===== DESTRUCTOR =====
-// Dipanggil saat: objek BST dihapus (keluar dari scope atau delete)
 BST::~BST()
 {
-    // Destructor harus membersihkan SEMUA node untuk hindari memory leak
-    // Memory leak = memori yang sudah tidak dipakai tapi tidak di-free
-    destroyTree(root); // Panggil fungsi destroyTree untuk hapus semua node
+    destroyTree(root);
 }
 
-// ===== DESTROY TREE (rekursif) =====
-// Fungsi ini REKURSIF = memanggil dirinya sendiri
 void BST::destroyTree(Komik *node)
 {
-    // Base case: jika node kosong, tidak ada yang dihapus
     if (node == nullptr)
     {
-        return; // Keluar dari fungsi
+        return;
     }
 
     // Recursive case: hapus left subtree dulu
@@ -42,25 +24,16 @@ void BST::destroyTree(Komik *node)
     // Hapus right subtree
     destroyTree(node->right);
 
-    // Baru hapus node saat ini
     // Urutan: kiri → kanan → tengah (post-order)
     // Kenapa? Karena kita tidak bisa hapus parent sebelum hapus children
-    delete node; // Free memory yang dipakai node
+    delete node;
 }
 
-// ===== INSERT (public interface) =====
-// Fungsi yang dipanggil user untuk insert komik baru
 void BST::insert(Komik *newKomik)
 {
-    // User panggil: tree.insert(komikBaru);
-    // Fungsi ini hanya "gerbang" yang panggil insertHelper
-
     root = insertHelper(root, newKomik);
-    // Kenapa root = ... ?
-    // Karena insertHelper return node baru (bisa berubah)
 }
 
-// ===== INSERT HELPER (rekursif) =====
 // Fungsi rekursif untuk insert komik ke posisi yang tepat
 Komik *BST::insertHelper(Komik *node, Komik *newKomik)
 {
@@ -106,8 +79,6 @@ Komik *BST::insertHelper(Komik *node, Komik *newKomik)
     return node; // Return node (bisa berubah atau tetap)
 }
 
-// ===== SEARCH (public interface) =====
-// Fungsi untuk cari komik berdasarkan title
 Komik *BST::search(const string &title) const
 {
     // const string& title = referensi ke string (tidak copy, hemat memori)
@@ -191,24 +162,24 @@ Komik *BST::deleteHelper(Komik *node, const string &title)
         // KASUS 1: Node LEAF (tidak punya anak)
         if (node->left == nullptr && node->right == nullptr)
         {
-            delete node;    // Hapus node
-            return nullptr; // Return null (posisi ini jadi kosong)
+            delete node;
+            return nullptr;
         }
 
         // KASUS 2A: Node punya 1 anak (anak KANAN saja)
         else if (node->left == nullptr)
         {
-            Komik *temp = node->right; // Simpan anak kanan
-            delete node;               // Hapus node
-            return temp;               // Return anak kanan (naik ke posisi parent)
+            Komik *temp = node->right;
+            delete node;
+            return temp;
         }
 
         // KASUS 2B: Node punya 1 anak (anak KIRI saja)
         else if (node->right == nullptr)
         {
-            Komik *temp = node->left; // Simpan anak kiri
-            delete node;              // Hapus node
-            return temp;              // Return anak kiri (naik ke posisi parent)
+            Komik *temp = node->left;
+            delete node;
+            return temp;
         }
 
         // KASUS 3: Node punya 2 anak
@@ -240,8 +211,6 @@ Komik *BST::deleteHelper(Komik *node, const string &title)
 // Cari node terkecil di subtree (paling kiri)
 Komik *BST::findMin(Komik *node) const
 {
-    // Node terkecil = node yang paling kiri
-    // Jalan terus ke kiri sampai tidak bisa lagi
 
     while (node->left != nullptr)
     {
@@ -329,14 +298,10 @@ void BST::inOrderHelper(Komik *node, function<void(Komik *)> callback) const
     }
 
     // Urutan IN-ORDER:
-    inOrderHelper(node->left, callback);  // 1. Proses LEFT dulu
-    callback(node);                       // 2. Proses ROOT
-    inOrderHelper(node->right, callback); // 3. Proses RIGHT terakhir
+    inOrderHelper(node->left, callback);
+    callback(node);
+    inOrderHelper(node->right, callback);
 
-    // Kenapa hasil terurut?
-    // Karena di BST: LEFT < ROOT < RIGHT
-    // Jadi kalau kita proses left dulu, terus root, terus right,
-    // hasilnya pasti urut dari kecil ke besar!
 }
 
 // ===== TRAVERSAL: POST-ORDER =====
@@ -354,9 +319,9 @@ void BST::postOrderHelper(Komik *node, function<void(Komik *)> callback) const
     }
 
     // Urutan POST-ORDER:
-    postOrderHelper(node->left, callback);  // 1. Proses LEFT
-    postOrderHelper(node->right, callback); // 2. Proses RIGHT
-    callback(node);                         // 3. Proses ROOT terakhir
+    postOrderHelper(node->left, callback);
+    postOrderHelper(node->right, callback);
+    callback(node);
 
     // Kegunaan: untuk delete tree (kita pakai di destroyTree)
 }
@@ -379,7 +344,7 @@ int BST::countHelper(Komik *node) const
 {
     if (node == nullptr)
     {
-        return 0; // Node kosong = 0
+        return 0;
     }
 
     // Rumus rekursif:
@@ -395,55 +360,14 @@ void BST::clear()
     root = nullptr;    // Set root jadi null (tree kosong)
 }
 
-// ===== GET ALL KOMIKS =====
-// Ambil semua komik dalam bentuk vector
 vector<Komik *> BST::getAllKomiks() const
 {
-    vector<Komik *> comics; // Bikin vector kosong
+    vector<Komik *> comics;
 
-    // Pakai inOrder untuk ambil semua komik terurut
     inOrder([&comics](Komik *comic)
             {
-                // [&comics] = lambda capture, tangkap variable comics by reference
-                // Artinya: fungsi lambda ini bisa akses dan ubah variable comics
-
-                comics.push_back(comic); // Masukkan comic ke vector
+                comics.push_back(comic);
             });
 
     return comics; // Return vector berisi semua komik
 }
-
-/*
- * ===== RINGKASAN BST.CPP =====
- *
- * 1. CONSTRUCTOR/DESTRUCTOR:
- *    - Constructor: set root = nullptr (tree kosong)
- *    - Destructor: hapus semua node (cleanup memory)
- *
- * 2. INSERT:
- *    - Rekursif: bandingkan dengan node saat ini
- *    - Jika lebih kecil → kiri, jika lebih besar → kanan
- *    - Jika sama → update data
- *
- * 3. SEARCH:
- *    - Rekursif: bandingkan title
- *    - Jika lebih kecil → cari kiri, lebih besar → cari kanan
- *    - Jika sama → return node
- *
- * 4. DELETE:
- *    - 3 kasus: leaf (0 anak), 1 anak, 2 anak
- *    - Kasus 2 anak paling tricky: pakai successor
- *
- * 5. TRAVERSAL:
- *    - Pre-order: Root → Left → Right
- *    - In-order: Left → Root → Right (SORTED!)
- *    - Post-order: Left → Right → Root
- *
- * 6. UTILITY:
- *    - isEmpty, count, clear, getAllKomiks
- *
- * 7. KONSEP PENTING:
- *    - Rekursi: fungsi memanggil dirinya sendiri
- *    - Base case: kondisi berhenti
- *    - Recursive case: panggil fungsi lagi dengan input berbeda
- */
