@@ -298,19 +298,36 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
         {
             printHeader("SEARCH COMIC");
 
-            string title;
-            cout << "Enter title to search: ";
-            getline(cin, title);
+            string keyword;
+            cout << "Enter keyword to search: ";
+            getline(cin, keyword);
 
-            Komik *found = tree.search(title);
-            if (found != nullptr)
+            vector<Komik *> results = tree.searchPartial(keyword);
+
+            if (results.empty())
             {
-                cout << "\033[32m\nKomik found!\033[0m\n";
-                found->display();
+                cout << "\033[31m\nNo comics found with keyword: '" << keyword << "'\033[0m" << endl;
             }
             else
             {
-                cout << "\033[31mKomik not found!\033[0m" << endl;
+                cout << "\033[32m\nFound " << results.size() << " comic(s):\033[0m\n"
+                     << endl;
+
+                cout << left << setw(5) << "ID"
+                     << setw(30) << "Title"
+                     << setw(25) << "Author"
+                     << setw(20) << "Genre(s)" << endl;
+                cout << string(80, '-') << endl;
+
+                for (Komik *comic : results)
+                {
+                    cout << left << setw(5) << comic->id
+                         << setw(30) << comic->title
+                         << setw(25) << comic->author
+                         << setw(20) << comic->genre << endl;
+                }
+
+                cout << "\n\033[32mTotal: " << results.size() << " comic(s)\033[0m" << endl;
             }
 
             pause();
