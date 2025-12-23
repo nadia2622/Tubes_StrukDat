@@ -36,6 +36,7 @@ public:
     Komik *search(const string &title) const;
 
     // NEW: Partial search (case-insensitive)
+    Komik* findByKeyword(const string& keyword) const;
     vector<Komik *> searchPartial(const string &keyword) const;
 
     bool remove(const string &title);

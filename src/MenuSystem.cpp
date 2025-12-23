@@ -80,7 +80,6 @@ void MenuSystem::showMainMenu()
         cout << "Welcome! Please choose an option:\n\n";
         cout << "1. Login\n";
         cout << "2. Register\n";
-        cout << "3. About System\n";
         cout << "0. Exit\n";
         cout << "\nChoice: ";
 
@@ -119,29 +118,6 @@ void MenuSystem::showMainMenu()
         case 2:
         {
             handleRegister();
-            break;
-        }
-
-        case 3:
-        {
-            printHeader("ABOUT SYSTEM");
-
-            cout << "\033[1;36mKomik Management System\033[0m\n\n";
-            cout << "Version: 1.0\n";
-            cout << "Developed by: Tim Tubes Struktur Data\n\n";
-
-            cout << "Features:\n";
-            cout << "- Binary Search Tree implementation\n";
-            cout << "- CRUD operations\n";
-            cout << "- Search & Filter\n";
-            cout << "- Authentication & Authorization\n";
-            cout << "- Role-based access control\n";
-            cout << "- Multiple genre support\n\n";
-
-            cout << "Default Accounts:\n";
-            cout << "- Admin: username=admin, password=admin123\n";
-
-            pause();
             break;
         }
 
@@ -227,8 +203,7 @@ void MenuSystem::showAdminMenu()
         cout << "4. Tree Traversal\n";
         cout << "5. View All Favorites\n";
         cout << "6. User Management\n";
-        cout << "7. Reload Sample Data\n";
-        cout << "8. System Statistics\n";
+        cout << "7. System Statistics\n";
         cout << "0. Logout\n";
         cout << "\nChoice: ";
 
@@ -262,12 +237,6 @@ void MenuSystem::showAdminMenu()
             userManagementMenu();
             break;
         case 7:
-            printHeader("RELOAD SAMPLE DATA");
-            manager.loadSampleData(tree);
-            cout << "\033[32mSample data reloaded!\033[0m" << endl;
-            pause();
-            break;
-        case 8:
             printHeader("SYSTEM STATISTICS");
             cout << "\033[1;36mStatistics:\033[0m\n\n";
             cout << "Total Comics: " << tree.count() << endl;
@@ -527,14 +496,14 @@ void MenuSystem::myFavoritesMenu()
             if (favorites.empty())
             {
                 cout << "\033[33mYou don't have any favorites yet!\033[0m" << endl;
-            }
+        }
             else
             {
                 for (int id : favorites)
                 {
                     tree.inOrder([id](Komik *c)
                                  {
-                            if (c->id == id) c->display(); });
+                                if (c->id == id) c->display(); });
                 }
             }
             pause();
@@ -544,18 +513,14 @@ void MenuSystem::myFavoritesMenu()
         case 2:
         {
             printHeader("ADD TO FAVORITES");
-            string title;
-            cout << "Enter comic title: ";
-            getline(cin, title);
+            string keyword;
+            cout << "Enter keyword to find comic: ";
+            getline(cin, keyword);
 
-            Komik *comic = tree.search(title);
+            Komik *comic = tree.findByKeyword(keyword);
             if (comic != nullptr)
             {
                 manager.addFavorite(currentUser->username, comic->id);
-            }
-            else
-            {
-                cout << "\033[31mComic not found!\033[0m" << endl;
             }
             pause();
             break;
@@ -564,18 +529,14 @@ void MenuSystem::myFavoritesMenu()
         case 3:
         {
             printHeader("REMOVE FROM FAVORITES");
-            string title;
-            cout << "Enter comic title: ";
-            getline(cin, title);
+            string keyword;
+            cout << "Enter keyword to find comic: ";
+            getline(cin, keyword);
 
-            Komik *comic = tree.search(title);
+            Komik *comic = tree.findByKeyword(keyword);
             if (comic != nullptr)
             {
                 manager.removeFavorite(currentUser->username, comic->id);
-            }
-            else
-            {
-                cout << "\033[31mComic not found!\033[0m" << endl;
             }
             pause();
             break;

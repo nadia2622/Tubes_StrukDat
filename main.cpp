@@ -41,6 +41,7 @@ void viewFavoritesMenu(KomikManager &manager, BST &tree);
 // Helper functions
 vector<int> parseGenreChoices(const string &input);
 string getMultipleGenres(KomikManager &manager, bool allowEmpty = false);
+string getAuthorFromList(KomikManager &manager, bool allowEmpty = false);
 
 // Global database connection
 Database dbConnection;
@@ -322,7 +323,6 @@ int main()
     cout << "\033[1;36m";
     cout << "==============================================\n";
     cout << "   KOMIK MANAGEMENT SYSTEM\n";
-    cout << "   with SQLite Database Integration\n";
     cout << "==============================================\033[0m\n"
          << endl;
 
@@ -496,6 +496,94 @@ string getMultipleGenres(KomikManager &manager, bool allowEmpty)
     return genreString;
 }
 
+// ===== HELPER: GET AUTHOR FROM LIST =====
+string getAuthorFromList(KomikManager &manager, bool allowEmpty)
+{
+    vector<string> allAuthors = manager.getAllAuthors();
+
+    cout << "\n\033[1;36mAvailable authors:\033[0m\n";
+    for (size_t i = 0; i < allAuthors.size(); i++)
+    {
+        cout << (i + 1) << ". " << allAuthors[i] << endl;
+    }
+
+    // Opsi untuk add new author
+    cout << (allAuthors.size() + 1) << ". \033[33m[Add New Author]\033[0m" << endl;
+
+    int choice;
+    bool validInput = false;
+    string selectedAuthor = "";
+
+    do
+    {
+        if (allowEmpty)
+        {
+            cout << "\nSelect author (press 0 to keep current, or 1-"
+                 << (allAuthors.size() + 1) << "): ";
+        }
+        else
+        {
+            cout << "\nSelect author (1-" << (allAuthors.size() + 1) << "): ";
+        }
+        cin >> choice;
+
+        // Error handling
+        if (cin.fail())
+        {
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cout << "\033[31mInvalid input! Please enter a number.\033[0m" << endl;
+            continue;
+        }
+
+        // Allow empty (untuk UPDATE)
+        if (allowEmpty && choice == 0)
+        {
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            return "";
+        }
+
+        // Validasi range
+        if (choice < 1 || choice > (int)(allAuthors.size() + 1))
+        {
+            cout << "\033[31mInvalid choice! Please select 1-"
+                 << (allAuthors.size() + 1) << "\033[0m" << endl;
+            continue;
+        }
+
+        // Kalau pilih "Add New Author"
+        if (choice == (int)(allAuthors.size() + 1))
+        {
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cout << "\nEnter new author name: ";
+            getline(cin, selectedAuthor);
+
+            if (selectedAuthor.empty())
+            {
+                cout << "\033[31mAuthor name cannot be empty!\033[0m" << endl;
+                continue;
+            }
+
+            // Tambah author baru ke manager
+            manager.addAuthor(selectedAuthor);
+            validInput = true;
+        }
+        else
+        {
+            // Pilih dari list
+            selectedAuthor = allAuthors[choice - 1];
+            validInput = true;
+        }
+
+    } while (!validInput);
+
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+    cout << "\n\033[32mSelected author: " << selectedAuthor << "\033[0m" << endl;
+
+    return selectedAuthor;
+}
+
 // ===== CRUD KOMIK MENU =====
 void crudKomikMenu(BST &tree, KomikManager &manager)
 {
@@ -531,29 +619,28 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
 
             string title, author, genre;
 
+            // ===== INPUT TITLE =====
             cout << "Enter title: ";
             getline(cin, title);
-            cout << "Enter author: ";
-            getline(cin, author);
 
+            // ===== SELECT AUTHOR FROM LIST =====
+            author = getAuthorFromList(manager, false);
+
+            // ===== SELECT MULTIPLE GENRES =====
             genre = getMultipleGenres(manager, false);
 
+            // ===== INSERT KE TREE =====
             int newId = manager.getNextId();
             Komik *newKomik = new Komik(newId, title, author, genre);
             tree.insert(newKomik);
 
-            if (dbConnection.insertKomik(newKomik))
-            {
-                cout << "\n\033[32mKomik added successfully!\033[0m" << endl;
-                cout << "ID: " << newId << endl;
-                cout << "Title: " << title << endl;
-                cout << "Author: " << author << endl;
-                cout << "Genre(s): " << genre << endl;
-            }
-            else
-            {
-                cout << "\033[31mFailed to save to database!\033[0m" << endl;
-            }
+            cout << "\n\033[32m==============================================\033[0m" << endl;
+            cout << "\033[32mKomik added successfully!\033[0m" << endl;
+            cout << "ID: " << newId << endl;
+            cout << "Title: " << title << endl;
+            cout << "Author: " << author << endl;
+            cout << "Genre(s): " << genre << endl;
+            cout << "\033[32m==============================================\033[0m" << endl;
 
             pause();
             break;
@@ -592,55 +679,33 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
         {
             printHeader("SEARCH COMIC");
 
-            int searchType;
-            cout << "Search Criteria:\n";
-            cout << "1. By Title\n";
-            cout << "2. By Author\n";
-            cout << "3. By Genre (Multiple)\n";
-            cout << "0. Cancel\n";
-            cout << "\nChoice: ";
-            cin >> searchType;
-            cin.ignore();
-
-            if (searchType == 0)
-                break;
-
             string keyword;
-            vector<Komik *> results;
-            SearchFilter filter;
+            cout << "Enter keyword: ";
+            getline(cin, keyword);
 
-            if (searchType == 3)
+            vector<Komik *> results = tree.searchPartial(keyword);
+
+            if (results.empty())
             {
-                keyword = getMultipleGenres(manager, false);
-
-                if (keyword.empty())
-                {
-                    cout << "\033[31mNo genre selected!\033[0m" << endl;
-                    pause();
-                    break;
-                }
-
-                results = filter.searchByGenre(tree, keyword);
-                filter.displayResults(results, "Search Results by Genre(s): " + keyword);
+                cout << "\033[31mNo comics found!\033[0m" << endl;
             }
             else
             {
-                cout << "Enter keyword: ";
-                getline(cin, keyword);
+                cout << "\033[32m\nFound " << results.size() << " comic(s):\033[0m\n"
+                     << endl;
 
-                if (searchType == 1)
+                cout << left << setw(5) << "ID"
+                     << setw(30) << "Title"
+                     << setw(25) << "Author"
+                     << setw(20) << "Genre(s)" << endl;
+                cout << string(80, '-') << endl;
+
+                for (Komik *comic : results)
                 {
-                    results = filter.searchByTitle(tree, keyword);
-                    filter.displayResults(results, "Search Results by Title: '" + keyword + "'");
-                }
-                else if (searchType == 2)
-                {
-                    results = filter.searchByAuthor(tree, keyword);
-                    filter.displayResults(results, "Search Results by Author: '" + keyword + "'");
-                }
-                else
-                {
-                    cout << "\033[31mInvalid option!\033[0m" << endl;
+                    cout << left << setw(5) << comic->id
+                         << setw(30) << comic->title
+                         << setw(25) << comic->author
+                         << setw(20) << comic->genre << endl;
                 }
             }
 
@@ -652,14 +717,14 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
         {
             printHeader("UPDATE COMIC");
 
-            string oldTitle;
-            cout << "Enter title of comic to update: ";
-            getline(cin, oldTitle);
+            string keyword;
+            cout << "Enter keyword to find comic: ";
+            getline(cin, keyword);
 
-            Komik *found = tree.search(oldTitle);
+            Komik *found = tree.findByKeyword(keyword);
+
             if (found == nullptr)
             {
-                cout << "\033[31mKomik not found!\033[0m" << endl;
                 pause();
                 break;
             }
@@ -670,11 +735,22 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
             string newTitle, newAuthor, newGenre;
 
             cout << "\n\033[1;36mEnter new data:\033[0m\n";
+
+            // ===== INPUT NEW TITLE =====
             cout << "Title: ";
             getline(cin, newTitle);
-            cout << "Author: ";
-            getline(cin, newAuthor);
 
+            // ===== SELECT NEW AUTHOR =====
+            cout << "\n\033[36mCurrent author: " << found->author << "\033[0m";
+            newAuthor = getAuthorFromList(manager, true);
+
+            if (newAuthor.empty())
+            {
+                newAuthor = found->author;
+                cout << "\033[33mKeeping current author.\033[0m" << endl;
+            }
+
+            // ===== SELECT NEW GENRES =====
             cout << "\n\033[36mCurrent genre(s): " << found->genre << "\033[0m";
             newGenre = getMultipleGenres(manager, true);
 
@@ -684,18 +760,13 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
                 cout << "\033[33mKeeping current genre(s).\033[0m" << endl;
             }
 
+            // ===== UPDATE TREE =====
+            string oldTitle = found->title;
+
             Komik *updatedKomik = new Komik(found->id, newTitle, newAuthor, newGenre);
             tree.update(oldTitle, updatedKomik);
 
-            if (dbConnection.updateKomik(found->id, updatedKomik))
-            {
-                cout << "\n\033[32mKomik updated successfully!\033[0m" << endl;
-            }
-            else
-            {
-                cout << "\033[31mFailed to update in database!\033[0m" << endl;
-            }
-
+            cout << "\n\033[32mKomik updated successfully!\033[0m" << endl;
             pause();
             break;
         }
@@ -704,14 +775,15 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
         {
             printHeader("DELETE COMIC");
 
-            string title;
-            cout << "Enter title of comic to delete: ";
-            getline(cin, title);
+            string keyword;
+            cout << "Enter keyword to find comic: ";
+            getline(cin, keyword);
 
-            Komik *found = tree.search(title);
+            // Pakai helper! Otomatis handle multiple results
+            Komik *found = tree.findByKeyword(keyword);
+
             if (found == nullptr)
             {
-                cout << "\033[31mKomik not found!\033[0m" << endl;
                 pause();
                 break;
             }
@@ -722,20 +794,12 @@ void crudKomikMenu(BST &tree, KomikManager &manager)
 
             char confirm;
             cin >> confirm;
+            cin.ignore();
 
             if (confirm == 'y' || confirm == 'Y')
             {
-                int idToDelete = found->id;
-                tree.remove(title);
-
-                if (dbConnection.deleteKomik(idToDelete))
-                {
-                    cout << "\033[32mKomik deleted successfully!\033[0m" << endl;
-                }
-                else
-                {
-                    cout << "\033[31mFailed to delete from database!\033[0m" << endl;
-                }
+                tree.remove(found->title); // Pakai title dari found
+                cout << "\033[32mKomik deleted successfully!\033[0m" << endl;
             }
             else
             {

@@ -2,6 +2,9 @@
 #include <iostream>
 #include <vector>
 #include <functional>
+#include <limits>
+#include <algorithm>
+#include <iomanip>
 
 BST::BST()
 {
@@ -394,4 +397,103 @@ vector<Komik *> BST::getAllKomiks() const
             { comics.push_back(comic); });
 
     return comics; // Return vector berisi semua komik
+}
+
+// ===== FIND BY KEYWORD (Interactive Helper with Clear UI) =====
+Komik *BST::findByKeyword(const string &keyword) const
+{
+    // Search partial
+    vector<Komik *> results = searchPartial(keyword);
+
+    // Kalau tidak ada hasil
+    if (results.empty())
+    {
+        cout << "\n\033[31mTidak ada komik dengan keyword: '" << keyword << "'\033[0m" << endl;
+        return nullptr;
+    }
+
+    // ===== SMART SORTING =====
+    string lowerKeyword = toLowerCase(keyword);
+
+    sort(results.begin(), results.end(), [&lowerKeyword, this](Komik *a, Komik *b)
+         {
+        string lowerA = toLowerCase(a->title);
+        string lowerB = toLowerCase(b->title);
+        
+        // 1. Exact match
+        bool exactA = (lowerA == lowerKeyword);
+        bool exactB = (lowerB == lowerKeyword);
+        if (exactA != exactB) return exactA;
+        
+        // 2. Starts with
+        bool startsA = (lowerA.find(lowerKeyword) == 0);
+        bool startsB = (lowerB.find(lowerKeyword) == 0);
+        if (startsA != startsB) return startsA;
+        
+        // 3. Shorter length
+        if (a->title.length() != b->title.length()) {
+            return a->title.length() < b->title.length();
+        }
+        
+        // 4. Alphabetical
+        return lowerA < lowerB; });
+
+    // ===== KALAU CUMA 1 HASIL =====
+    if (results.size() == 1)
+    {
+        cout << "\n\033[32mFound: " << results[0]->title << "\033[0m" << endl;
+        return results[0];
+    }
+
+    // ===== KALAU LEBIH DARI 1, USER HARUS PILIH =====
+    cout << "\n\033[33mMultiple results found for: '" << keyword << "'\033[0m" << endl;
+
+    cout << "\033[1;36mPilih salah satu komik:\033[0m\n"
+         << endl;
+
+    // Tampilkan dengan format tabel
+    cout << left << setw(5) << "No."
+         << setw(35) << "Title"
+         << setw(25) << "Author" << endl;
+    cout << string(75, '-') << endl;
+
+    for (size_t i = 0; i < results.size(); i++)
+    {
+        cout << left << setw(5) << (i + 1)
+             << setw(35) << results[i]->title
+             << setw(25) << results[i]->author;
+
+        cout << endl;
+    }
+
+    cout << string(75, '-') << endl;
+
+    // ===== INPUT PILIHAN =====
+    int choice;
+    do
+    {
+        cout << "\n\033[1;33mPilih Angka (1-" << results.size() << "): \033[0m";
+        cin >> choice;
+
+        if (cin.fail())
+        {
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cout << "\033[31mInvalid input! Please enter a number.\033[0m" << endl;
+            choice = -1;
+            continue;
+        }
+
+        if (choice < 1 || choice > (int)results.size())
+        {
+            cout << "\033[31mInvalid choice! Please enter 1-" << results.size() << "\033[0m" << endl;
+        }
+    } while (choice < 1 || choice > (int)results.size());
+
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+    cout << "\n\033[32mSelected: " << results[choice - 1]->title << "\033[0m\n"
+         << endl;
+
+    return results[choice - 1];
 }
